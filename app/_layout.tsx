@@ -2,8 +2,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
-import { supabase } from '@/lib/supabase';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { colors } from '@/constants/design';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -23,11 +22,11 @@ export default function RootLayout() {
   useFrameworkReady();
   const router = useRouter();
   const segments = useSegments();
-  const { initialize, isLoading, user, profile } = useAuthStore();
+  const { initialize, isLoading, user } = useAuthStore();
 
   useEffect(() => {
     initialize();
-  }, []);
+  }, [initialize]);
 
   useEffect(() => {
     if (!user) return;
@@ -51,7 +50,7 @@ export default function RootLayout() {
     } else if (!user && !inAuthGroup) {
       router.replace('/(auth)/login');
     }
-  }, [user, segments, isLoading]);
+  }, [user, segments, isLoading, router]);
 
   if (isLoading) {
     return (
