@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/design';
@@ -7,75 +8,41 @@ import { Card, Avatar, Container, Button, Input } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore } from '@/store/useAuthStore';
+import { buddyService } from '@/services/buddyService';
+import { chatroomService } from '@/services/chatroomService';
 
 export default function BuddiesScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { profile } = useAuthStore();
   const [activeTab, setActiveTab] = useState('My Buddies');
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: buddies, isLoading: buddiesLoading, refetch: refetchBuddies } = useQuery({
-    queryKey: ['buddies', user?.id],
+    queryKey: ['buddies', profile?.id],
     queryFn: async () => {
-      const { data: results, error: buddyError } = await supabase
-        .from('buddies')
-        .select('*, profile:buddy_id(id, display_name, avatar_url, status_message, region)')
-        .eq('user_id', user!.id)
-        .eq('status', 'accepted');
-
-      if (buddyError) throw buddyError;
-      return results;
+      return buddyService.getBuddies(profile!.id);
     },
-    enabled: !!user?.id,
+    enabled: !!profile?.id,
   });
 
   const { data: searchResults, isLoading: searchLoading } = useQuery({
     queryKey: ['searchProfiles', searchQuery],
     queryFn: async () => {
       if (!searchQuery) return [];
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .ilike('display_name', `%${searchQuery}%`);
-      
-      if (error) throw error;
-      return data;
+      return buddyService.searchBuddies(searchQuery);
     },
     enabled: !!searchQuery,
   });
 
   const handleAddBuddy = async (buddyId: string) => {
     try {
-      const { data: exists, error: checkError } = await supabase
-        .from('buddies')
-        .select('id')
-        .eq('user_id', user!.id)
-        .eq('buddy_id', buddyId)
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-      if (exists) {
-        Alert.alert('Info', 'Buddy request already sent or already buddies');
-        return;
-      }
-
-      const { error: addError } = await supabase.from('buddies').insert([
-        {
-          user_id: user!.id,
-          buddy_id: buddyId,
-          status: 'accepted',
-        },
-        {
-          user_id: buddyId,
-          buddy_id: user!.id,
-          status: 'accepted',
-        }
-      ]);
-
-      if (addError) throw addError;
-
+      await buddyService.sendBuddyRequest(profile!.id, buddyId);
+      // For this demo, we'll auto-accept if both are friends or just for simplicity
+      // But let's just send the request as per service
+      await buddyService.acceptBuddyRequest('dummy', profile!.id, buddyId); // Auto accept for now
+      
       Alert.alert('Success', 'Buddy added!');
       queryClient.invalidateQueries({ queryKey: ['buddies'] });
     } catch (error) {
@@ -83,22 +50,34 @@ export default function BuddiesScreen() {
     }
   };
 
+  const handleStartDirectChat = async (buddyId: string) => {
+    if (!profile) return;
+    try {
+      const room = await chatroomService.createDirectChat(profile.id, buddyId);
+      if (room) {
+        router.push(`/chatroom/${room.id}`);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to start chat');
+    }
+  };
+
   const renderBuddy = ({ item, index }: { item: any; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 100).duration(500)}>
       <Card variant="elevated" style={styles.buddyCard}>
         <Card.Content style={styles.buddyContent}>
-          <Avatar source={{ uri: item.profile?.avatar_url }} size="md" />
+          <Avatar source={{ uri: item.avatar_url }} size="md" />
           <View style={styles.buddyInfo}>
-            <Text style={styles.buddyName}>{item.profile?.display_name || 'User'}</Text>
+            <Text style={styles.buddyName}>{item.display_name || 'User'}</Text>
             <Text style={styles.buddyStatus} numberOfLines={1}>
-              {item.profile?.status_message || 'Online'}
+              {item.status_message || 'Online'}
             </Text>
           </View>
           <View style={styles.buddyActions}>
-            <TouchableOpacity style={styles.actionIcon} onPress={() => Alert.alert('Chat', 'Direct messaging coming soon!')}>
+            <TouchableOpacity style={styles.actionIcon} onPress={() => handleStartDirectChat(item.id)}>
               <Ionicons name="chatbubble-outline" size={22} color={colors.accent} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionIcon} onPress={() => router.push(`/profile/${item.buddy_id}`)}>
+            <TouchableOpacity style={styles.actionIcon} onPress={() => router.push(`/profile/${item.id}`)}>
               <Ionicons name="person-outline" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -116,7 +95,7 @@ export default function BuddiesScreen() {
             <Text style={styles.buddyName}>{item.display_name || 'User'}</Text>
             <Text style={styles.buddyStatus} numberOfLines={1}>{item.region}</Text>
           </View>
-          {item.user_id !== user.id && (
+          {item.id !== profile?.id && (
             <Button
               variant="primary"
               size="sm"
@@ -129,6 +108,10 @@ export default function BuddiesScreen() {
         </Card.Content>
       </Card>
     </Animated.View>
+  );
+
+  const renderBuddyCard = ({ item, index }: { item: any; index: number }) => (
+    activeTab === 'My Buddies' ? renderBuddy({ item, index }) : renderSearchResult({ item, index })
   );
 
   return (
@@ -162,11 +145,12 @@ export default function BuddiesScreen() {
         )}
       </View>
 
-      <FlatList
+      <FlashList
         data={activeTab === 'My Buddies' ? buddies : searchResults}
-        renderItem={activeTab === 'My Buddies' ? renderBuddy : renderSearchResult}
-        keyExtractor={(item) => (activeTab === 'My Buddies' ? item.id : item.id)}
+        renderItem={renderBuddyCard}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        estimatedItemSize={80}
         refreshControl={
           activeTab === 'My Buddies' ? (
             <RefreshControl refreshing={buddiesLoading} onRefresh={refetchBuddies} tintColor={colors.accent} />

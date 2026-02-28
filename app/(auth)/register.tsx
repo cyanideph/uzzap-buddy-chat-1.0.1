@@ -11,6 +11,7 @@ const REGIONS = ['Metro Manila', 'Luzon', 'Visayas', 'Mindanao', 'International'
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,7 +19,7 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!email || !password || !displayName) {
+    if (!email || !password || !displayName || !username) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -28,11 +29,6 @@ export default function RegisterScreen() {
       const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            display_name: displayName,
-          },
-        },
       });
 
       if (signUpError) throw signUpError;
@@ -41,8 +37,10 @@ export default function RegisterScreen() {
       // Create profile entry
       const { error: profileError } = await supabase.from('profiles').insert({
         id: user.id,
+        username: username.toLowerCase(),
         display_name: displayName,
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayName}`,
+        region,
+        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
       });
 
       if (profileError) throw profileError;
@@ -69,6 +67,15 @@ export default function RegisterScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(400).duration(800)} style={styles.form}>
+          <Input
+            label="Username"
+            placeholder="Unique username"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            leftIcon={<Ionicons name="at-outline" size={20} color={colors.textSecondary} />}
+          />
+          <View style={{ height: spacing.md }} />
           <Input
             label="Display Name"
             placeholder="What should we call you?"

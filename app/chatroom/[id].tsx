@@ -1,91 +1,70 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/design';
 import { Container, Avatar } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/context/AuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useChatStore } from '@/store/useChatStore';
+import { messageService } from '@/services/messageService';
+import { chatroomService } from '@/services/chatroomService';
 
 export default function ChatroomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user } = useAuth();
+  const { profile } = useAuthStore();
+  const { messages: chatroomMessages, fetchMessages, subscribeToChatroom, activeChatroomId, setActiveChatroom } = useChatStore();
   const router = useRouter();
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<any[]>([]);
+  const [room, setRoom] = useState<any>(null);
+  const [roomLoading, setRoomLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<FlashList<any>>(null);
 
-  const { data: room, isLoading: roomLoading } = useQuery({
-    queryKey: ['room', id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('rooms').select('*').eq('id', id).single();
-      if (error) throw error;
-      return data;
-    },
-  });
+  const messages = chatroomMessages[id as string] || [];
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !profile) return;
 
-    // Fetch initial messages
-    const fetchMessages = async () => {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*, profile:user_id(display_name, avatar_url)')
-        .eq('room_id', id)
-        .order('created_at', { ascending: true });
+    const setupChat = async () => {
+      setRoomLoading(true);
       
-      if (!error && data) {
-        setMessages(data);
-      }
+      // Join chatroom (ensure membership for RLS)
+      await chatroomService.joinChatroom(id as string, profile.id);
+      
+      // Get room info
+      const { data } = await supabase.from('chatrooms').select('*').eq('id', id).single();
+      setRoom(data);
+      
+      // Initial messages
+      await fetchMessages(id as string);
+      setRoomLoading(false);
+      
+      // Subscribe to realtime updates
+      const unsubscribe = subscribeToChatroom(id as string);
+      return unsubscribe;
     };
 
-    fetchMessages();
-
-    // Subscribe to new messages
-    const channel = supabase
-      .channel(`room:${id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `room_id=eq.${id}`,
-        },
-        async (payload) => {
-          // Fetch profile for the new message
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name, avatar_url')
-            .eq('id', payload.new.user_id)
-            .single();
-          
-          const newMessage = { ...payload.new, profile };
-          setMessages((prev) => [...prev, newMessage]);
-        }
-      )
-      .subscribe();
+    const cleanup = setupChat();
+    setActiveChatroom(id as string);
 
     return () => {
-      supabase.removeChannel(channel);
+      cleanup.then(unsub => unsub?.());
+      setActiveChatroom(null);
     };
-  }, [id]);
+  }, [id, profile]);
 
   const handleSendMessage = async () => {
-    if (!message.trim() || !user) return;
+    if (!message.trim() || !profile || !id) return;
 
     setSending(true);
     try {
-      const { error } = await supabase.from('messages').insert({
-        room_id: id,
-        user_id: user.id,
+      await messageService.sendMessage({
+        chatroom_id: id as string,
+        sender_id: profile.id,
         content: message.trim(),
       });
-
-      if (error) throw error;
       setMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -95,15 +74,15 @@ export default function ChatroomScreen() {
   };
 
   const renderMessage = ({ item }: { item: any }) => {
-    const isMe = item.user_id === user?.id;
+    const isMe = item.sender_id === profile?.id;
 
     return (
       <View style={[styles.messageWrapper, isMe ? styles.myMessageWrapper : styles.theirMessageWrapper]}>
         {!isMe && (
-          <Avatar source={{ uri: item.profile?.avatar_url }} size="sm" style={styles.messageAvatar} />
+          <Avatar source={{ uri: item.sender?.avatar_url }} size="sm" style={styles.messageAvatar} />
         )}
         <View style={[styles.messageBubble, isMe ? styles.myMessageBubble : styles.theirMessageBubble]}>
-          {!isMe && <Text style={styles.messageUser}>{item.profile?.display_name}</Text>}
+          {!isMe && <Text style={styles.messageUser}>{item.sender?.display_name || 'Anonymous'}</Text>}
           <Text style={[styles.messageText, isMe ? styles.myMessageText : styles.theirMessageText]}>
             {item.content}
           </Text>
@@ -141,12 +120,13 @@ export default function ChatroomScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <FlatList
+        <FlashList
           ref={flatListRef}
           data={messages}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messageList}
+          estimatedItemSize={100}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
         />
 

@@ -7,35 +7,16 @@ import { Card, Avatar, Container, Button, Input } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { user, signOut } = useAuth();
+  const { user, profile, updateProfile, signOut, isLoading } = useAuthStore();
   const [editing, setEditing] = useState(false);
-  const [displayName, setDisplayName] = useState('');
-  const [statusMessage, setStatusMessage] = useState('');
+  const [displayName, setDisplayName] = useState(profile?.display_name || '');
+  const [statusMessage, setStatusMessage] = useState(profile?.status_message || '');
   const [updating, setUpdating] = useState(false);
-
-  const { data: profile, isLoading, refetch } = useQuery({
-    queryKey: ['profile', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user!.id)
-        .single();
-      
-      if (error) throw error;
-      if (data) {
-        setDisplayName(data.display_name);
-        setStatusMessage(data.status_message);
-      }
-      return data;
-    },
-    enabled: !!user?.id,
-  });
 
   const handleUpdateProfile = async () => {
     if (!displayName) {
@@ -45,18 +26,12 @@ export default function ProfileScreen() {
 
     setUpdating(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          display_name: displayName,
-          status_message: statusMessage,
-        })
-        .eq('id', user!.id);
-
-      if (error) throw error;
+      await updateProfile({
+        display_name: displayName,
+        status_message: statusMessage,
+      });
 
       setEditing(false);
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
       Alert.alert('Success', 'Profile updated successfully');
     } catch (error) {
       Alert.alert('Error', 'Failed to update profile');
@@ -84,7 +59,7 @@ export default function ProfileScreen() {
     <Container style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.accent} />}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => useAuthStore.getState().initialize()} tintColor={colors.accent} />}
       >
         <Animated.View entering={FadeIn.duration(800)} style={styles.header}>
           <View style={styles.avatarContainer}>

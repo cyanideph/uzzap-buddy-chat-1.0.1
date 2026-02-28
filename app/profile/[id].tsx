@@ -6,11 +6,13 @@ import { colors, spacing, typography, borderRadius, shadows } from '@/constants/
 import { Container, Avatar, Card, Button } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore } from '@/store/useAuthStore';
+import { buddyService } from '@/services/buddyService';
+import { chatroomService } from '@/services/chatroomService';
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user: currentUser } = useAuth();
+  const { profile: currentUserProfile } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -24,46 +26,46 @@ export default function UserProfileScreen() {
   });
 
   const { data: buddyStatus } = useQuery({
-    queryKey: ['buddyStatus', id, currentUser?.id],
+    queryKey: ['buddyStatus', id, currentUserProfile?.id],
     queryFn: async () => {
-      if (!currentUser) return null;
+      if (!currentUserProfile) return null;
       const { data, error } = await supabase
         .from('buddies')
         .select('status')
-        .eq('user_id', currentUser.id)
+        .eq('user_id', currentUserProfile.id)
         .eq('buddy_id', id)
         .maybeSingle();
       
       if (error) return null;
       return data?.status || null;
     },
-    enabled: !!currentUser && !!id,
+    enabled: !!currentUserProfile && !!id,
   });
 
   const handleAddBuddy = async () => {
-    if (!currentUser || !id) return;
+    if (!currentUserProfile || !id) return;
 
     try {
-      const { error } = await supabase.from('buddies').insert([
-        {
-          user_id: currentUser.id,
-          buddy_id: id,
-          status: 'accepted',
-        },
-        {
-          user_id: id,
-          buddy_id: currentUser.id,
-          status: 'accepted',
-        }
-      ]);
-
-      if (error) throw error;
+      await buddyService.sendBuddyRequest(currentUserProfile.id, id as string);
+      await buddyService.acceptBuddyRequest('dummy', currentUserProfile.id, id as string);
 
       Alert.alert('Success', 'Buddy added!');
       queryClient.invalidateQueries({ queryKey: ['buddyStatus', id] });
       queryClient.invalidateQueries({ queryKey: ['buddies'] });
     } catch (error) {
       Alert.alert('Error', 'Failed to add buddy');
+    }
+  };
+
+  const handleStartDirectChat = async () => {
+    if (!currentUserProfile || !id) return;
+    try {
+      const room = await chatroomService.createDirectChat(currentUserProfile.id, id as string);
+      if (room) {
+        router.push(`/chatroom/${room.id}`);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to start chat');
     }
   };
 
@@ -84,13 +86,13 @@ export default function UserProfileScreen() {
           <Text style={styles.userName}>{profile?.display_name || 'Buddy'}</Text>
           <Text style={styles.userRegion}>{profile?.region || 'International'}</Text>
           
-          {id !== currentUser?.id && (
+          {id !== currentUserProfile?.id && (
             <View style={styles.actions}>
               {buddyStatus === 'accepted' ? (
                 <Button
                   variant="outline"
                   leftIcon={<Ionicons name="chatbubble-outline" size={20} color={colors.primary} />}
-                  onPress={() => Alert.alert('Chat', 'Direct messaging coming soon!')}
+                  onPress={handleStartDirectChat}
                   style={styles.actionBtn}
                 >
                   Message

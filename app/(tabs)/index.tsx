@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, RefreshControl, ScrollView, Modal, Alert } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, RefreshControl, ScrollView, Modal, Alert } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/design';
@@ -7,14 +8,17 @@ import { Card, Avatar, Container, Button, Input } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useChatStore } from '@/store/useChatStore';
+import { chatroomService } from '@/services/chatroomService';
 
 const REGIONS = ['All', 'Metro Manila', 'Luzon', 'Visayas', 'Mindanao', 'International'];
 
 export default function ChatroomListScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { profile } = useAuthStore();
+  const { chatrooms, fetchChatrooms, isLoading } = useChatStore();
   const [selectedRegion, setSelectedRegion] = useState('All');
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
@@ -22,31 +26,28 @@ export default function ChatroomListScreen() {
   const [newRoomDescription, setNewRoomDescription] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const { data: chatrooms, isLoading, refetch } = useQuery({
-    queryKey: ['chatrooms', selectedRegion],
-    queryFn: async () => {
-      let query = supabase.from('rooms').select('*');
-      if (selectedRegion !== 'All') {
-        query = query.eq('region', selectedRegion);
-      }
-      const { data, error } = await query.order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
+  useEffect(() => {
+    fetchChatrooms();
+  }, []);
+
+  const filteredChatrooms = chatrooms.filter(room => 
+    selectedRegion === 'All' || room.description?.includes(selectedRegion) || room.name.includes(selectedRegion)
+  );
 
   const handleCreateRoom = async () => {
-    if (!newRoomName || !newRoomRegion) {
+    if (!newRoomName || !newRoomRegion || !profile) {
       Alert.alert('Error', 'Please enter a room name and select a region');
       return;
     }
 
     setCreating(true);
     try {
-      const { data, error } = await supabase.from('rooms').insert({
+      const { data, error } = await supabase.from('chatrooms').insert({
         name: newRoomName,
-        region: newRoomRegion,
-        description: newRoomDescription,
+        slug: `${newRoomName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+        description: `${newRoomRegion}: ${newRoomDescription}`,
+        type: 'public',
+        created_by: profile.id
       }).select().single();
 
       if (error) throw error;
@@ -54,7 +55,7 @@ export default function ChatroomListScreen() {
       setCreateModalVisible(false);
       setNewRoomName('');
       setNewRoomDescription('');
-      queryClient.invalidateQueries({ queryKey: ['chatrooms'] });
+      fetchChatrooms();
       router.push(`/chatroom/${data.id}`);
     } catch (error) {
       Alert.alert('Error', 'Failed to create chatroom');
@@ -125,13 +126,14 @@ export default function ChatroomListScreen() {
         </ScrollView>
       </View>
 
-      <FlatList
-        data={chatrooms}
+      <FlashList
+        data={filteredChatrooms}
         renderItem={renderChatroom}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        estimatedItemSize={100}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.accent} />
+          <RefreshControl refreshing={isLoading} onRefresh={fetchChatrooms} tintColor={colors.accent} />
         }
         ListEmptyComponent={
           !isLoading ? (
