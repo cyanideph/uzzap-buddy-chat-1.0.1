@@ -4,19 +4,16 @@ import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/design';
-import { Card, Avatar, Container, Button, Input } from '@/components/ui';
+import { Card, Container, Button, Input } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useChatStore } from '@/store/useChatStore';
-import { chatroomService } from '@/services/chatroomService';
 
 const REGIONS = ['All', 'Metro Manila', 'Luzon', 'Visayas', 'Mindanao', 'International'];
 
 export default function ChatroomListScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { profile } = useAuthStore();
   const { chatrooms, fetchChatrooms, isLoading } = useChatStore();
   const [selectedRegion, setSelectedRegion] = useState('All');
@@ -28,7 +25,7 @@ export default function ChatroomListScreen() {
 
   useEffect(() => {
     fetchChatrooms();
-  }, []);
+  }, [fetchChatrooms]);
 
   const filteredChatrooms = chatrooms.filter(room => 
     selectedRegion === 'All' || room.description?.includes(selectedRegion) || room.name.includes(selectedRegion)
@@ -57,7 +54,7 @@ export default function ChatroomListScreen() {
       setNewRoomDescription('');
       fetchChatrooms();
       router.push(`/chatroom/${data.id}`);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to create chatroom');
     } finally {
       setCreating(false);

@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/design';
 import { Card, Avatar, Container, Button, Input } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { user, profile, updateProfile, signOut, isLoading } = useAuthStore();
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState(profile?.display_name || '');
@@ -33,7 +30,7 @@ export default function ProfileScreen() {
 
       setEditing(false);
       Alert.alert('Success', 'Profile updated successfully');
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update profile');
     } finally {
       setUpdating(false);
@@ -64,7 +61,10 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeIn.duration(800)} style={styles.header}>
           <View style={styles.avatarContainer}>
             <Avatar source={{ uri: profile?.avatar_url }} size="xl" />
-            <TouchableOpacity style={styles.editAvatarBtn}>
+            <TouchableOpacity
+              style={styles.editAvatarBtn}
+              onPress={() => Alert.alert('Coming soon', 'Avatar upload will be available soon.')}
+            >
               <Ionicons name="camera" size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
@@ -138,14 +138,14 @@ export default function ProfileScreen() {
 
           <Animated.View entering={FadeInUp.delay(400).duration(500)}>
             <Card variant="elevated" style={styles.settingsCard}>
-              <TouchableOpacity style={styles.settingItem}>
+              <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/settings/notifications')}>
                 <View style={styles.settingIconContainer}>
                   <Ionicons name="notifications-outline" size={20} color={colors.accent} />
                 </View>
                 <Text style={styles.settingText}>Notifications</Text>
                 <Ionicons name="chevron-forward" size={20} color={colors.border} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.settingItem}>
+              <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/settings/privacy')}>
                 <View style={styles.settingIconContainer}>
                   <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
                 </View>

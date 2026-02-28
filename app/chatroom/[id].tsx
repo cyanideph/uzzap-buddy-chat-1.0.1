@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
+import { useLocalSearchParams, Stack } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/design';
 import { Container, Avatar } from '@/components/ui';
@@ -14,8 +14,7 @@ import { chatroomService } from '@/services/chatroomService';
 export default function ChatroomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuthStore();
-  const { messages: chatroomMessages, fetchMessages, subscribeToChatroom, activeChatroomId, setActiveChatroom } = useChatStore();
-  const router = useRouter();
+  const { messages: chatroomMessages, fetchMessages, subscribeToChatroom, setActiveChatroom } = useChatStore();
   const [message, setMessage] = useState('');
   const [room, setRoom] = useState<any>(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -53,7 +52,7 @@ export default function ChatroomScreen() {
       cleanup.then(unsub => unsub?.());
       setActiveChatroom(null);
     };
-  }, [id, profile]);
+  }, [id, profile, fetchMessages, setActiveChatroom, subscribeToChatroom]);
 
   const handleSendMessage = async () => {
     if (!message.trim() || !profile || !id) return;

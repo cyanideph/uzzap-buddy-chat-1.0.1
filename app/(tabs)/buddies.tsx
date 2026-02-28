@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
-import { supabase } from '@/lib/supabase';
-import { colors, spacing, typography, borderRadius, shadows } from '@/constants/design';
+import { colors, spacing, typography, borderRadius } from '@/constants/design';
 import { Card, Avatar, Container, Button, Input } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -45,7 +44,7 @@ export default function BuddiesScreen() {
       
       Alert.alert('Success', 'Buddy added!');
       queryClient.invalidateQueries({ queryKey: ['buddies'] });
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to add buddy');
     }
   };
@@ -57,7 +56,7 @@ export default function BuddiesScreen() {
       if (room) {
         router.push(`/chatroom/${room.id}`);
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to start chat');
     }
   };
