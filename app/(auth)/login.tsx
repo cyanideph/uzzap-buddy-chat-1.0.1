@@ -35,6 +35,25 @@ export default function LoginScreen() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      Alert.alert('Reset Password', 'Please enter your email first.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+      Alert.alert('Check your email', 'A password reset link has been sent.');
+    } catch (error: any) {
+      Alert.alert('Reset Failed', error.message || 'Unable to send reset email.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   return (
     <Container style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -66,7 +85,7 @@ export default function LoginScreen() {
             leftIcon={<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />}
           />
 
-          <TouchableOpacity style={styles.forgotPassword}>
+          <TouchableOpacity style={styles.forgotPassword} onPress={handleForgotPassword}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 

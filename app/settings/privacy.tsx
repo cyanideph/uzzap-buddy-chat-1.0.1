@@ -1,0 +1,31 @@
+import React from 'react';
+import { Stack } from 'expo-router';
+import { View, Text, StyleSheet } from 'react-native';
+import { Container, Card } from '@/components/ui';
+import { colors, spacing, typography } from '@/constants/design';
+
+export default function PrivacySettingsScreen() {
+  return (
+    <Container style={styles.container}>
+      <Stack.Screen options={{ headerShown: true, title: 'Privacy & Security' }} />
+      <View style={styles.content}>
+        <Card variant="elevated" style={styles.card}>
+          <Card.Content>
+            <Text style={styles.title}>Privacy controls</Text>
+            <Text style={styles.item}>• Buddy-only direct chats are supported.</Text>
+            <Text style={styles.item}>• Presence is tracked while signed in.</Text>
+            <Text style={styles.item}>• Additional privacy controls can be configured in Supabase RLS.</Text>
+          </Card.Content>
+        </Card>
+      </View>
+    </Container>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { backgroundColor: colors.background },
+  content: { padding: spacing.md },
+  card: { backgroundColor: colors.backgroundSecondary },
+  title: { ...typography.h4, color: colors.text, marginBottom: spacing.sm },
+  item: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.xs },
+});

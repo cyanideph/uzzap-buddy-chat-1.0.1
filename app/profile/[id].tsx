@@ -25,19 +25,11 @@ export default function UserProfileScreen() {
     },
   });
 
-  const { data: buddyStatus } = useQuery({
-    queryKey: ['buddyStatus', id, currentUserProfile?.id],
+  const { data: buddyRelationship } = useQuery({
+    queryKey: ['buddyRelationship', id, currentUserProfile?.id],
     queryFn: async () => {
-      if (!currentUserProfile) return null;
-      const { data, error } = await supabase
-        .from('buddies')
-        .select('status')
-        .eq('user_id', currentUserProfile.id)
-        .eq('buddy_id', id)
-        .maybeSingle();
-      
-      if (error) return null;
-      return data?.status || null;
+      if (!currentUserProfile || !id) return 'none';
+      return buddyService.getBuddyRelationship(currentUserProfile.id, id);
     },
     enabled: !!currentUserProfile && !!id,
   });
@@ -47,11 +39,10 @@ export default function UserProfileScreen() {
 
     try {
       await buddyService.sendBuddyRequest(currentUserProfile.id, id as string);
-      await buddyService.acceptBuddyRequest('dummy', currentUserProfile.id, id as string);
 
-      Alert.alert('Success', 'Buddy added!');
-      queryClient.invalidateQueries({ queryKey: ['buddyStatus', id] });
-      queryClient.invalidateQueries({ queryKey: ['buddies'] });
+      Alert.alert('Success', 'Buddy request sent!');
+      queryClient.invalidateQueries({ queryKey: ['buddyRelationship', id] });
+      queryClient.invalidateQueries({ queryKey: ['buddyRequests'] });
     } catch {
       Alert.alert('Error', 'Failed to add buddy');
     }
@@ -85,10 +76,10 @@ export default function UserProfileScreen() {
           <Avatar source={{ uri: profile?.avatar_url }} size="xl" />
           <Text style={styles.userName}>{profile?.display_name || 'Buddy'}</Text>
           <Text style={styles.userRegion}>{profile?.region || 'International'}</Text>
-          
+
           {id !== currentUserProfile?.id && (
             <View style={styles.actions}>
-              {buddyStatus === 'accepted' ? (
+              {buddyRelationship === 'accepted' ? (
                 <Button
                   variant="outline"
                   leftIcon={<Ionicons name="chatbubble-outline" size={20} color={colors.primary} />}
@@ -103,8 +94,9 @@ export default function UserProfileScreen() {
                   leftIcon={<Ionicons name="person-add-outline" size={20} color={colors.white} />}
                   onPress={handleAddBuddy}
                   style={styles.actionBtn}
+                  disabled={buddyRelationship === 'pending'}
                 >
-                  Add Buddy
+                  {buddyRelationship === 'pending' ? 'Request Sent' : 'Add Buddy'}
                 </Button>
               )}
             </View>

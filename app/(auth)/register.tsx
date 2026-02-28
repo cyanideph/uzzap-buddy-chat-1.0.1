@@ -15,12 +15,24 @@ export default function RegisterScreen() {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [region, setRegion] = useState('Metro Manila');
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!email || !password || !displayName || !username) {
+    if (!email || !password || !displayName || !username || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+
+    if (password.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters long');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
       return;
     }
 
@@ -103,6 +115,16 @@ export default function RegisterScreen() {
             leftIcon={<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />}
           />
           
+          <View style={{ height: spacing.md }} />
+          <Input
+            label="Confirm Password"
+            placeholder="Re-enter your password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            leftIcon={<Ionicons name="shield-checkmark-outline" size={20} color={colors.textSecondary} />}
+          />
+
           <Text style={styles.label}>Region</Text>
           <View style={styles.regionsGrid}>
             {REGIONS.map((r) => (

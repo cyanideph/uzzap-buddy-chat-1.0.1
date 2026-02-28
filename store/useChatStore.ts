@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { messageService } from '../services/messageService';
 import { chatroomService } from '../services/chatroomService';
+import { notificationService } from '../services/notificationService';
 import { Message, Chatroom, Profile } from '../types/database.types';
 
 type ChatState = {
@@ -11,6 +12,7 @@ type ChatState = {
   isLoading: boolean;
   typingUsers: Record<string, Set<string>>;
   activeChatroomId: string | null;
+  channels: Record<string, any>;
 
   setChatrooms: (chatrooms: Chatroom[]) => void;
   setActiveChatroom: (chatroomId: string | null) => void;
@@ -29,6 +31,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isLoading: false,
   typingUsers: {},
   activeChatroomId: null,
+  channels: {},
 
   setChatrooms: (chatrooms) => set({ chatrooms }),
   setActiveChatroom: (chatroomId) => set({ activeChatroomId: chatroomId }),
@@ -42,28 +45,27 @@ export const useChatStore = create<ChatState>((set, get) => ({
   fetchMessages: async (chatroomId) => {
     const messages = await messageService.getMessages(chatroomId);
     set((state) => ({
-      messages: { ...state.messages, [chatroomId]: messages }
+      messages: { ...state.messages, [chatroomId]: messages },
     }));
   },
 
   fetchMembers: async (chatroomId) => {
     const members = await chatroomService.getChatroomMembers(chatroomId);
     set((state) => ({
-      members: { ...state.members, [chatroomId]: members }
+      members: { ...state.members, [chatroomId]: members },
     }));
   },
 
   addMessage: (chatroomId, message) => {
     set((state) => {
       const currentMessages = state.messages[chatroomId] || [];
-      // Deduplicate
       if (currentMessages.find((m) => m.id === message.id)) return state;
-      
+
       return {
         messages: {
           ...state.messages,
-          [chatroomId]: [...currentMessages, message]
-        }
+          [chatroomId]: [...currentMessages, message],
+        },
       };
     });
   },
@@ -74,17 +76,38 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const nextTyping = new Set(currentTyping);
       if (isTyping) nextTyping.add(userId);
       else nextTyping.delete(userId);
-      
+
       return {
         typingUsers: {
           ...state.typingUsers,
-          [chatroomId]: nextTyping
-        }
+          [chatroomId]: nextTyping,
+        },
       };
     });
+
+    const channel = get().channels[chatroomId];
+    if (channel) {
+      channel.send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { userId, isTyping },
+      });
+    }
   },
 
   subscribeToChatroom: (chatroomId) => {
+    const existing = get().channels[chatroomId];
+    if (existing) {
+      return () => {
+        existing.unsubscribe();
+        set((state) => {
+          const next = { ...state.channels };
+          delete next[chatroomId];
+          return { channels: next };
+        });
+      };
+    }
+
     const channel = supabase
       .channel(`chatroom:${chatroomId}`)
       .on(
@@ -93,33 +116,45 @@ export const useChatStore = create<ChatState>((set, get) => ({
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `chatroom_id=eq.${chatroomId}`
+          filter: `chatroom_id=eq.${chatroomId}`,
         },
         async (payload) => {
-          // Fetch sender profile for new message
-          const { data: sender } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', payload.new.sender_id)
-            .single();
-          
+          const { data: sender } = await supabase.from('profiles').select('*').eq('id', payload.new.sender_id).single();
+
           const messageWithSender = { ...payload.new, sender };
           get().addMessage(chatroomId, messageWithSender as any);
+
+          if (get().activeChatroomId !== chatroomId) {
+            notificationService.sendLocalNotification('New message', sender?.display_name ? `${sender.display_name}: ${payload.new.content}` : payload.new.content);
+          }
         }
       )
-      .on('presence', { event: 'sync' }, () => {
-        // Presence updates handled here if needed
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        // User joined
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        // User left
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        const { userId, isTyping } = payload;
+        set((state) => {
+          const currentTyping = state.typingUsers[chatroomId] || new Set();
+          const nextTyping = new Set(currentTyping);
+          if (isTyping) nextTyping.add(userId);
+          else nextTyping.delete(userId);
+          return {
+            typingUsers: {
+              ...state.typingUsers,
+              [chatroomId]: nextTyping,
+            },
+          };
+        });
       })
       .subscribe();
 
+    set((state) => ({ channels: { ...state.channels, [chatroomId]: channel } }));
+
     return () => {
       channel.unsubscribe();
+      set((state) => {
+        const next = { ...state.channels };
+        delete next[chatroomId];
+        return { channels: next };
+      });
     };
-  }
+  },
 }));
