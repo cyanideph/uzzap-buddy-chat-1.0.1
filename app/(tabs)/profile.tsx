@@ -5,8 +5,12 @@ import { Card, Avatar, Container, Button, Input } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '@/lib/supabase';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { user, profile, updateProfile, signOut, isLoading } = useAuthStore();
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState(profile?.display_name || '');
@@ -30,6 +34,45 @@ export default function ProfileScreen() {
       Alert.alert('Success', 'Profile updated successfully');
     } catch {
       Alert.alert('Error', 'Failed to update profile');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleUpdateAvatar = async () => {
+    if (!profile) return;
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission needed', 'Please allow photo access to update your avatar.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets[0]?.uri) return;
+
+    setUpdating(true);
+    try {
+      const response = await fetch(result.assets[0].uri);
+      const blob = await response.blob();
+      const path = `avatars/${profile.id}-${Date.now()}.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+      await updateProfile({ avatar_url: data.publicUrl });
+      Alert.alert('Success', 'Avatar updated!');
+    } catch (error: any) {
+      Alert.alert('Upload failed', error.message || 'Unable to update avatar.');
     } finally {
       setUpdating(false);
     }
@@ -59,7 +102,7 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeIn.duration(800)} style={styles.header}>
           <View style={styles.avatarContainer}>
             <Avatar source={{ uri: profile?.avatar_url }} size="xl" />
-            <TouchableOpacity style={styles.editAvatarBtn}>
+            <TouchableOpacity style={styles.editAvatarBtn} onPress={handleUpdateAvatar}>
               <Ionicons name="camera" size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
@@ -133,14 +176,14 @@ export default function ProfileScreen() {
 
           <Animated.View entering={FadeInUp.delay(400).duration(500)}>
             <Card variant="elevated" style={styles.settingsCard}>
-              <TouchableOpacity style={styles.settingItem}>
+              <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/settings/notifications')}>
                 <View style={styles.settingIconContainer}>
                   <Ionicons name="notifications-outline" size={20} color={colors.accent} />
                 </View>
                 <Text style={styles.settingText}>Notifications</Text>
                 <Ionicons name="chevron-forward" size={20} color={colors.border} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.settingItem}>
+              <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/settings/privacy')}>
                 <View style={styles.settingIconContainer}>
                   <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
                 </View>

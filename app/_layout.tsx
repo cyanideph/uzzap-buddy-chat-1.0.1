@@ -7,6 +7,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { colors } from '@/constants/design';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authService } from '@/services/authService';
+import { notificationService } from '@/services/notificationService';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -33,6 +34,7 @@ export default function RootLayout() {
 
     // Set user as online
     authService.setPresence(user.id, true);
+    notificationService.registerForPushNotificationsAsync();
 
     // Set user as offline when app closes
     return () => {
@@ -67,6 +69,8 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)/login" />
         <Stack.Screen name="(auth)/register" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="settings/notifications" />
+        <Stack.Screen name="settings/privacy" />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="light" />

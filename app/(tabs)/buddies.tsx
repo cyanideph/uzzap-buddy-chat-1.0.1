@@ -35,17 +35,43 @@ export default function BuddiesScreen() {
     enabled: !!searchQuery,
   });
 
+  const { data: buddyRequests, isLoading: requestsLoading, refetch: refetchRequests } = useQuery({
+    queryKey: ['buddyRequests', profile?.id],
+    queryFn: async () => buddyService.getBuddyRequests(profile!.id),
+    enabled: !!profile?.id,
+  });
+
   const handleAddBuddy = async (buddyId: string) => {
+    if (!profile) return;
     try {
-      await buddyService.sendBuddyRequest(profile!.id, buddyId);
-      // For this demo, we'll auto-accept if both are friends or just for simplicity
-      // But let's just send the request as per service
-      await buddyService.acceptBuddyRequest('dummy', profile!.id, buddyId); // Auto accept for now
+      await buddyService.sendBuddyRequest(profile.id, buddyId);
       
-      Alert.alert('Success', 'Buddy added!');
+      Alert.alert('Success', 'Buddy request sent!');
       queryClient.invalidateQueries({ queryKey: ['buddies'] });
+      queryClient.invalidateQueries({ queryKey: ['buddyRequests'] });
     } catch {
       Alert.alert('Error', 'Failed to add buddy');
+    }
+  };
+
+  const handleAcceptRequest = async (requestId: string, senderId: string) => {
+    if (!profile) return;
+    try {
+      await buddyService.acceptBuddyRequest(requestId, senderId, profile.id);
+      Alert.alert('Success', 'Buddy request accepted!');
+      queryClient.invalidateQueries({ queryKey: ['buddies'] });
+      queryClient.invalidateQueries({ queryKey: ['buddyRequests'] });
+    } catch {
+      Alert.alert('Error', 'Failed to accept request');
+    }
+  };
+
+  const handleDeclineRequest = async (requestId: string) => {
+    try {
+      await buddyService.declineBuddyRequest(requestId);
+      queryClient.invalidateQueries({ queryKey: ['buddyRequests'] });
+    } catch {
+      Alert.alert('Error', 'Failed to decline request');
     }
   };
 
@@ -110,7 +136,29 @@ export default function BuddiesScreen() {
   );
 
   const renderBuddyCard = ({ item, index }: { item: any; index: number }) => (
-    activeTab === 'My Buddies' ? renderBuddy({ item, index }) : renderSearchResult({ item, index })
+    activeTab === 'My Buddies'
+      ? renderBuddy({ item, index })
+      : activeTab === 'Find Buddies'
+        ? renderSearchResult({ item, index })
+        : renderRequest({ item, index })
+  );
+
+  const renderRequest = ({ item, index }: { item: any; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 100).duration(500)}>
+      <Card variant="elevated" style={styles.buddyCard}>
+        <Card.Content style={styles.buddyContent}>
+          <Avatar source={{ uri: item.sender?.avatar_url }} size="md" />
+          <View style={styles.buddyInfo}>
+            <Text style={styles.buddyName}>{item.sender?.display_name || item.sender?.username || 'User'}</Text>
+            <Text style={styles.buddyStatus}>Sent you a buddy request</Text>
+          </View>
+          <View style={styles.requestActions}>
+            <Button variant="primary" size="sm" onPress={() => handleAcceptRequest(item.id, item.sender_id)}>Accept</Button>
+            <Button variant="ghost" size="sm" onPress={() => handleDeclineRequest(item.id)}>Decline</Button>
+          </View>
+        </Card.Content>
+      </Card>
+    </Animated.View>
   );
 
   return (
@@ -129,6 +177,12 @@ export default function BuddiesScreen() {
           >
             <Text style={[styles.tabText, activeTab === 'Find Buddies' && styles.activeTabText]}>Find Buddies</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setActiveTab('Requests')}
+            style={[styles.tab, activeTab === 'Requests' && styles.activeTab]}
+          >
+            <Text style={[styles.tabText, activeTab === 'Requests' && styles.activeTabText]}>Requests</Text>
+          </TouchableOpacity>
         </View>
 
         {activeTab === 'Find Buddies' && (
@@ -145,7 +199,7 @@ export default function BuddiesScreen() {
       </View>
 
       <FlashList
-        data={activeTab === 'My Buddies' ? buddies : searchResults}
+        data={activeTab === 'My Buddies' ? buddies : activeTab === 'Find Buddies' ? searchResults : buddyRequests}
         renderItem={renderBuddyCard}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
@@ -153,23 +207,29 @@ export default function BuddiesScreen() {
         refreshControl={
           activeTab === 'My Buddies' ? (
             <RefreshControl refreshing={buddiesLoading} onRefresh={refetchBuddies} tintColor={colors.accent} />
+          ) : activeTab === 'Requests' ? (
+            <RefreshControl refreshing={requestsLoading} onRefresh={refetchRequests} tintColor={colors.accent} />
           ) : undefined
         }
         ListEmptyComponent={
-          !buddiesLoading && !searchLoading ? (
+          !buddiesLoading && !searchLoading && !requestsLoading ? (
             <View style={styles.emptyContainer}>
               <Ionicons
-                name={activeTab === 'My Buddies' ? 'people-outline' : 'search-outline'}
+                name={
+                  activeTab === 'My Buddies' ? 'people-outline' : activeTab === 'Find Buddies' ? 'search-outline' : 'mail-outline'
+                }
                 size={80}
                 color={colors.border}
               />
               <Text style={styles.emptyTitle}>
-                {activeTab === 'My Buddies' ? 'No buddies yet' : 'Search for buddies'}
+                {activeTab === 'My Buddies' ? 'No buddies yet' : activeTab === 'Find Buddies' ? 'Search for buddies' : 'No requests'}
               </Text>
               <Text style={styles.emptySubtitle}>
                 {activeTab === 'My Buddies'
                   ? 'Start by finding new buddies and sending requests!'
-                  : 'Enter a name in the search bar to find people to chat with.'}
+                  : activeTab === 'Find Buddies'
+                    ? 'Enter a name in the search bar to find people to chat with.'
+                    : 'Incoming buddy requests will appear here.'}
               </Text>
             </View>
           ) : null
@@ -239,6 +299,9 @@ const styles = StyleSheet.create({
   buddyActions: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  requestActions: {
+    gap: spacing.xs,
   },
   actionIcon: {
     width: 40,

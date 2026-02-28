@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Buddy, BuddyRequest, Profile } from '../types/database.types';
+import { BuddyRequest, Profile } from '../types/database.types';
 
 export const buddyService = {
   async getBuddies(userId: string): Promise<Profile[]> {
@@ -32,7 +32,7 @@ export const buddyService = {
     return data;
   },
 
-  async getBuddyRequests(userId: string): Promise<BuddyRequest[]> {
+  async getBuddyRequests(userId: string): Promise<(BuddyRequest & { sender?: Profile | null })[]> {
     const { data, error } = await supabase
       .from('buddy_requests')
       .select('*')
@@ -44,21 +44,52 @@ export const buddyService = {
       return [];
     }
 
-    return data;
+    const enriched = await Promise.all(
+      data.map(async (request: any) => {
+        const { data: sender } = await supabase.from('profiles').select('*').eq('id', request.sender_id).maybeSingle();
+        return { ...request, sender };
+      })
+    );
+
+    return enriched;
   },
 
   async acceptBuddyRequest(requestId: string, senderId: string, receiverId: string) {
-    // 1. Update buddy request status
-    await supabase
-      .from('buddy_requests')
-      .update({ status: 'accepted' })
-      .eq('id', requestId);
+    await supabase.from('buddy_requests').update({ status: 'accepted' }).eq('id', requestId);
 
-    // 2. Add as buddies for both sides
     await supabase.from('buddies').upsert([
       { user_id: senderId, buddy_id: receiverId, status: 'accepted' },
-      { user_id: receiverId, buddy_id: senderId, status: 'accepted' }
+      { user_id: receiverId, buddy_id: senderId, status: 'accepted' },
     ]);
+  },
+
+  async declineBuddyRequest(requestId: string) {
+    const { error } = await supabase.from('buddy_requests').update({ status: 'declined' }).eq('id', requestId);
+
+    if (error) {
+      console.error('Error declining buddy request:', error);
+    }
+  },
+
+  async getBuddyRelationship(userId: string, otherUserId: string): Promise<'accepted' | 'pending' | 'none'> {
+    const { data: buddy } = await supabase
+      .from('buddies')
+      .select('status')
+      .eq('user_id', userId)
+      .eq('buddy_id', otherUserId)
+      .maybeSingle();
+
+    if (buddy?.status === 'accepted') return 'accepted';
+
+    const { data: request } = await supabase
+      .from('buddy_requests')
+      .select('status')
+      .or(`and(sender_id.eq.${userId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${userId})`)
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    if (request?.status === 'pending') return 'pending';
+    return 'none';
   },
 
   async removeBuddy(userId: string, buddyId: string) {
@@ -81,5 +112,5 @@ export const buddyService = {
     }
 
     return data;
-  }
+  },
 };

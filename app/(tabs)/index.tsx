@@ -12,6 +12,12 @@ import { useChatStore } from '@/store/useChatStore';
 
 const REGIONS = ['All', 'Metro Manila', 'Luzon', 'Visayas', 'Mindanao', 'International'];
 
+const getRoomRegion = (room: any) => {
+  if (room.region) return room.region;
+  const maybeRegion = (room.description || '').split(':')[0];
+  return REGIONS.includes(maybeRegion) ? maybeRegion : 'International';
+};
+
 export default function ChatroomListScreen() {
   const router = useRouter();
   const { profile } = useAuthStore();
@@ -28,7 +34,7 @@ export default function ChatroomListScreen() {
   }, [fetchChatrooms]);
 
   const filteredChatrooms = chatrooms.filter(room => 
-    selectedRegion === 'All' || room.description?.includes(selectedRegion) || room.name.includes(selectedRegion)
+    selectedRegion === 'All' || getRoomRegion(room) === selectedRegion || room.name.includes(selectedRegion)
   );
 
   const handleCreateRoom = async () => {
@@ -79,7 +85,7 @@ export default function ChatroomListScreen() {
             </Text>
             <View style={styles.roomMeta}>
               <View style={styles.tag}>
-                <Text style={styles.tagText}>{item.region}</Text>
+                <Text style={styles.tagText}>{getRoomRegion(item)}</Text>
               </View>
               <View style={styles.onlineCount}>
                 <Ionicons name="people" size={14} color={colors.textTertiary} />
