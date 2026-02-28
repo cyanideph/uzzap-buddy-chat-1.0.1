@@ -1,17 +1,12 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
-import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/design';
 import { Card, Avatar, Container, Button, Input } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export default function ProfileScreen() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const { user, profile, updateProfile, signOut, isLoading } = useAuthStore();
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState(profile?.display_name || '');
@@ -33,7 +28,7 @@ export default function ProfileScreen() {
 
       setEditing(false);
       Alert.alert('Success', 'Profile updated successfully');
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update profile');
     } finally {
       setUpdating(false);

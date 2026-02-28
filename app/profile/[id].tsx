@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/design';
@@ -52,7 +52,7 @@ export default function UserProfileScreen() {
       Alert.alert('Success', 'Buddy added!');
       queryClient.invalidateQueries({ queryKey: ['buddyStatus', id] });
       queryClient.invalidateQueries({ queryKey: ['buddies'] });
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to add buddy');
     }
   };
@@ -64,7 +64,7 @@ export default function UserProfileScreen() {
       if (room) {
         router.push(`/chatroom/${room.id}`);
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to start chat');
     }
   };
