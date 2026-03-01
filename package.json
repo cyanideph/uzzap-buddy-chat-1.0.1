@@ -17,12 +17,13 @@
     "install:bun": "bun install",
     "install:fast": "bun install --no-postinstall",
     "add": "bun add",
-    "doctor": "EXPO_NO_TELEMETRY=1 npx expo doctor",
+    "doctor": "EXPO_NO_TELEMETRY=1 npx expo-doctor",
     "upgrade": "EXPO_NO_TELEMETRY=1 npx expo upgrade",
     "lint": "EXPO_NO_TELEMETRY=1 npx expo lint",
     "prebuild": "EXPO_NO_TELEMETRY=1 npx expo prebuild",
     "prebuild:clean": "EXPO_NO_TELEMETRY=1 npx expo prebuild --clean",
-    "test": "npm run lint"
+    "typecheck": "tsc --noEmit",
+    "test": "npm run lint && npm run typecheck"
   },
   "dependencies": {
     "@blinkdotnew/sdk": "2.3.7",
