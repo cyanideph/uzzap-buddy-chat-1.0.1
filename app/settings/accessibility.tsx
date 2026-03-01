@@ -1,0 +1,66 @@
+import React from 'react';
+import { Stack } from 'expo-router';
+import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
+import { Container, Card } from '@/components/ui';
+import { colors, spacing, typography, borderRadius } from '@/constants/design';
+import { useAppSettingsStore } from '@/store/useAppSettingsStore';
+
+const fontScaleOptions = [0.9, 1.0, 1.2, 1.4];
+
+export default function AccessibilitySettingsScreen() {
+  const { fontScale, setFontScale, highContrast, setHighContrast, reduceMotion, setReduceMotion } = useAppSettingsStore();
+
+  return (
+    <Container style={styles.container}>
+      <Stack.Screen options={{ headerShown: true, title: 'Accessibility' }} />
+      <View style={styles.content}>
+        <Card variant="elevated" style={styles.card}>
+          <Card.Content>
+            <Text style={styles.subHeader}>Font size ({fontScale.toFixed(1)}x)</Text>
+            {fontScaleOptions.map((item) => (
+              <TouchableOpacity
+                key={item}
+                style={[styles.option, fontScale === item && styles.optionActive]}
+                onPress={() => setFontScale(item)}
+              >
+                <Text style={styles.optionText}>{item.toFixed(1)}x</Text>
+              </TouchableOpacity>
+            ))}
+
+            <View style={styles.row}>
+              <Text style={styles.label}>High contrast mode</Text>
+              <Switch value={highContrast} onValueChange={setHighContrast} />
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Reduce motion</Text>
+              <Switch value={reduceMotion} onValueChange={setReduceMotion} />
+            </View>
+          </Card.Content>
+        </Card>
+      </View>
+    </Container>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { backgroundColor: colors.background },
+  content: { padding: spacing.md },
+  card: { backgroundColor: colors.backgroundSecondary },
+  subHeader: { ...typography.captionBold, color: colors.textSecondary, marginBottom: spacing.sm },
+  option: {
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.sm,
+  },
+  optionActive: { borderColor: colors.primary, backgroundColor: colors.primaryTint },
+  optionText: { ...typography.body, color: colors.text },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  label: { ...typography.body, color: colors.text },
+});
