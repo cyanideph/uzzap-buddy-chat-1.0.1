@@ -48,11 +48,14 @@ export default function RootLayout() {
   useEffect(() => {
     if (isLoading) return;
 
+    const topSegment = segments[0];
     const inAuthGroup = segments[0] === '(auth)';
+    const atRoot = !topSegment;
+    const inProtectedGroup = ['(tabs)', 'chatroom', 'chatrooms', 'profile', 'settings'].includes(topSegment);
     
-    if (user && inAuthGroup) {
+    if (user && (inAuthGroup || atRoot)) {
       router.replace('/(tabs)');
-    } else if (!user && !inAuthGroup) {
+    } else if (!user && inProtectedGroup) {
       router.replace('/(auth)/login');
     }
   }, [user, segments, isLoading, router]);

@@ -28,7 +28,6 @@ export default function LoginScreen() {
       });
 
       if (error) throw error;
-      router.replace('/(tabs)');
     } catch (error: any) {
       Alert.alert('Login Failed', error.message || 'Check your credentials and try again.');
     } finally {
