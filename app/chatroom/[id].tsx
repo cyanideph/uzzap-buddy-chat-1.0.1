@@ -35,32 +35,59 @@ export default function ChatroomScreen() {
   useEffect(() => {
     if (!id || !profile) return;
 
+    let isMounted = true;
+    let unsubscribe: (() => void) | null = null;
+
     const setupChat = async () => {
       setRoomLoading(true);
-      await markRoomVisited(id as string);
+      try {
+        await markRoomVisited(id as string);
 
-      await chatroomService.joinChatroom(id as string, profile.id);
+        const joined = await chatroomService.joinChatroom(id as string, profile.id);
+        if (!joined) throw new Error('Unable to join this chatroom.');
 
-      const roomData = await chatroomService.getChatroomById(id as string);
-      setRoom(roomData);
+        const roomData = await chatroomService.getChatroomById(id as string);
+        if (!roomData) throw new Error('Unable to load chatroom details.');
 
-      await fetchMessages(id as string);
-      const savedDraft = await AsyncStorage.getItem(draftKey);
-      if (savedDraft) setMessage(savedDraft);
-      setRoomLoading(false);
+        if (!isMounted) return;
+        setRoom(roomData);
 
-      const unsubscribe = subscribeToChatroom(id as string);
-      return unsubscribe;
+        await fetchMessages(id as string);
+
+        const savedDraft = await AsyncStorage.getItem(draftKey);
+        if (isMounted && savedDraft) {
+          setMessage(savedDraft);
+        }
+
+        if (isMounted) {
+          unsubscribe = subscribeToChatroom(id as string);
+        }
+      } catch (error) {
+        console.error('Error setting up chatroom:', error);
+        if (isMounted) {
+          Alert.alert('Unable to load chatroom', 'Please try again.');
+          router.back();
+        }
+      } finally {
+        if (isMounted) {
+          setRoomLoading(false);
+        }
+      }
     };
 
-    const cleanup = setupChat();
+    setupChat();
     setActiveChatroom(id as string);
 
     return () => {
-      cleanup.then((unsub) => unsub?.());
+      isMounted = false;
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      setTyping(id as string, profile.id, false);
+      unsubscribe?.();
       setActiveChatroom(null);
     };
-  }, [draftKey, id, profile, fetchMessages, setActiveChatroom, subscribeToChatroom]);
+  }, [draftKey, id, profile, fetchMessages, setActiveChatroom, setTyping, subscribeToChatroom, router]);
 
   useEffect(() => {
     if (!id) return;
@@ -94,19 +121,25 @@ export default function ChatroomScreen() {
 
     setSending(true);
     try {
-      await messageService.sendMessage({
+      const sentMessage = await messageService.sendMessage({
         chatroom_id: id as string,
         sender_id: profile.id,
         content: message.trim(),
         type: 'text',
         reply_to: replyTo?.id || null,
       });
+
+      if (!sentMessage) {
+        throw new Error('Unable to send message right now.');
+      }
+
       setMessage('');
       setReplyTo(null);
       await AsyncStorage.removeItem(draftKey);
       setTyping(id as string, profile.id, false);
     } catch (error) {
       console.error('Error sending message:', error);
+      Alert.alert('Message failed', 'Unable to send your message. Please try again.');
     } finally {
       setSending(false);
     }
@@ -170,7 +203,7 @@ export default function ChatroomScreen() {
           try {
             await leaveChatroom(id as string, profile.id);
             router.replace('/(tabs)/' as any);
-          } catch (error) {
+          } catch {
             Alert.alert('Error', 'Failed to leave chatroom. Please try again.');
           }
         },
