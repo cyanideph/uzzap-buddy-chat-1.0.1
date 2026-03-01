@@ -128,6 +128,7 @@ export default function ChatroomListScreen() {
   const createRegionProvinces = PHILIPPINES_REGIONS[newRoomRegion] || [];
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
+  const hasActiveFilters = selectedRegion !== 'All Regions' || selectedProvince !== 'All Provinces' || normalizedSearch.length > 0;
   const filteredChatrooms = (chatrooms as ChatroomItem[]).filter((room) => {
     const location = parseRoomLocation(room);
     const regionMatch = selectedRegion === 'All Regions' || location.region === selectedRegion;
@@ -145,6 +146,12 @@ export default function ChatroomListScreen() {
   const openPicker = (type: 'region' | 'province') => {
     setPickerType(type);
     setPickerModalVisible(true);
+  };
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setSelectedRegion('All Regions');
+    setSelectedProvince('All Provinces');
   };
 
   const applyRegion = (region: string) => {
@@ -257,6 +264,20 @@ export default function ChatroomListScreen() {
             <Ionicons name="compass-outline" size={18} color={colors.text} />
             <Text style={styles.discoveryBtnText}>Open Discovery & Growth</Text>
           </TouchableOpacity>
+
+          <View style={styles.filterSummaryRow}>
+            <View style={styles.resultsPill}>
+              <Ionicons name="layers-outline" size={14} color={colors.accent} />
+              <Text style={styles.resultsPillText}>{filteredChatrooms.length} rooms shown</Text>
+            </View>
+            {hasActiveFilters ? (
+              <TouchableOpacity style={styles.resetBtn} onPress={clearAllFilters}>
+                <Ionicons name="refresh-outline" size={13} color={colors.textSecondary} />
+                <Text style={styles.resetBtnText}>Reset filters</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
           <Input
             placeholder="Search by room, region, or province"
             value={searchQuery}
@@ -293,6 +314,28 @@ export default function ChatroomListScreen() {
             <Text style={styles.filterValue} numberOfLines={1}>{selectedProvince}</Text>
           </TouchableOpacity>
         </View>
+
+        {hasActiveFilters ? (
+          <View style={styles.activeFilterRow}>
+            {selectedRegion !== 'All Regions' ? (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>{selectedRegion}</Text>
+              </View>
+            ) : null}
+
+            {selectedProvince !== 'All Provinces' ? (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>{selectedProvince}</Text>
+              </View>
+            ) : null}
+
+            {normalizedSearch.length > 0 ? (
+              <View style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>“{searchQuery.trim()}”</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       <FlashList
@@ -307,6 +350,11 @@ export default function ChatroomListScreen() {
               <Ionicons name="map-outline" size={76} color={colors.border} />
               <Text style={styles.emptyTitle}>No rooms in this filter yet</Text>
               <Text style={styles.emptySubtitle}>Try another province or create the first chatroom for your local area.</Text>
+              {hasActiveFilters ? (
+                <Button variant="ghost" onPress={clearAllFilters} style={styles.emptyGhostButton}>
+                  Clear Filters
+                </Button>
+              ) : null}
               <Button variant="primary" onPress={() => setCreateModalVisible(true)} style={styles.createButton}>
                 Create Provincial Room
               </Button>
@@ -456,6 +504,36 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   discoveryBtnText: { ...typography.smallBold, color: colors.text },
+  filterSummaryRow: {
+    marginBottom: spacing.sm,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  resultsPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+  },
+  resultsPillText: { ...typography.smallBold, color: colors.textSecondary },
+  resetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+  },
+  resetBtnText: { ...typography.smallBold, color: colors.textSecondary },
   regionsContainer: { paddingHorizontal: spacing.md, gap: spacing.sm },
   regionTab: {
     paddingHorizontal: spacing.md,
@@ -486,6 +564,22 @@ const styles = StyleSheet.create({
   filterBtnDisabled: { opacity: 0.55 },
   filterLabel: { ...typography.tiny, color: colors.textTertiary },
   filterValue: { ...typography.smallBold, color: colors.text, marginTop: 2 },
+  activeFilterRow: {
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  activeFilterChip: {
+    borderWidth: 1,
+    borderColor: colors.accent,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  activeFilterText: { ...typography.smallBold, color: colors.accentLight },
   listContent: { padding: spacing.md, paddingBottom: 100 },
   roomCard: {
     marginBottom: spacing.md,
@@ -515,6 +609,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     paddingHorizontal: spacing.xxl,
   },
+  emptyGhostButton: { marginTop: spacing.lg },
   createButton: { marginTop: spacing.xl, paddingHorizontal: spacing.xl },
   fab: {
     position: 'absolute',
