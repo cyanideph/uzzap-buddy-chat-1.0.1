@@ -3,6 +3,7 @@
  */
 
 import { ReactNode } from 'react';
+import { StyleProp, ViewStyle } from 'react-native';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -67,4 +68,9 @@ export interface ButtonProps {
    * Test ID for automated testing
    */
   testID?: string;
+
+  /**
+   * Additional style overrides for button wrapper
+   */
+  style?: StyleProp<ViewStyle>;
 }

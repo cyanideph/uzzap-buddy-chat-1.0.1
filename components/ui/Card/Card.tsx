@@ -134,9 +134,9 @@ export function Card({
 // Card.Header Sub-component
 // ============================================================================
 
-function CardHeader({ children }: CardHeaderProps) {
+function CardHeader({ children, style }: CardHeaderProps) {
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, style]}>
       {children}
     </View>
   );
@@ -172,9 +172,9 @@ Card.Image = CardImage;
 // Card.Content Sub-component
 // ============================================================================
 
-function CardContent({ children }: CardContentProps) {
+function CardContent({ children, style }: CardContentProps) {
   return (
-    <View style={styles.content}>
+    <View style={[styles.content, style]}>
       {children}
     </View>
   );
@@ -186,9 +186,9 @@ Card.Content = CardContent;
 // Card.Footer Sub-component
 // ============================================================================
 
-function CardFooter({ children }: CardFooterProps) {
+function CardFooter({ children, style }: CardFooterProps) {
   return (
-    <View style={styles.footer}>
+    <View style={[styles.footer, style]}>
       {children}
     </View>
   );

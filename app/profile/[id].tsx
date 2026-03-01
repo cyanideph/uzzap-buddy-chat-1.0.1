@@ -73,7 +73,7 @@ export default function UserProfileScreen() {
       <Stack.Screen options={{ headerShown: true, title: 'Profile' }} />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Avatar source={{ uri: profile?.avatar_url }} size="xl" />
+          <Avatar source={profile?.avatar_url ? { uri: profile.avatar_url } : undefined} size="xl" />
           <Text style={styles.userName}>{profile?.display_name || 'Buddy'}</Text>
           <Text style={styles.userRegion}>{profile?.region || 'International'}</Text>
 

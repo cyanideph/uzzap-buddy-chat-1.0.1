@@ -277,7 +277,6 @@ export default function ChatroomListScreen() {
         renderItem={renderChatroom}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
-        estimatedItemSize={96}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={fetchChatrooms} tintColor={colors.accent} />}
         ListEmptyComponent={
           !isLoading ? (

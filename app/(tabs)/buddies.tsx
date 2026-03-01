@@ -218,7 +218,6 @@ export default function BuddiesScreen() {
         renderItem={renderBuddyCard}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
-        estimatedItemSize={80}
         refreshControl={
           activeTab === 'My Buddies' ? (
             <RefreshControl refreshing={buddiesLoading} onRefresh={refetchBuddies} tintColor={colors.accent} />

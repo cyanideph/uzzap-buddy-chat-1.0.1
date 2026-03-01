@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/design';
@@ -21,7 +21,7 @@ export default function ChatroomScreen() {
   const [room, setRoom] = useState<any>(null);
   const [roomLoading, setRoomLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const flatListRef = useRef<FlashList<any>>(null);
+  const flatListRef = useRef<FlashListRef<any>>(null);
   const typingTimeoutRef = useRef<any>(null);
 
   const messages = useMemo(() => chatroomMessages[id as string] || [], [chatroomMessages, id]);
@@ -150,7 +150,7 @@ export default function ChatroomScreen() {
         onLongPress={() => isMe && handleDeleteMessage(item.id)}
         delayLongPress={300}
       >
-        {!isMe && <Avatar source={{ uri: item.sender?.avatar_url }} size="sm" style={styles.messageAvatar} />}
+        {!isMe && <Avatar source={item.sender?.avatar_url ? { uri: item.sender.avatar_url } : undefined} size="sm" style={styles.messageAvatar} />}
         <View style={[styles.messageBubble, isMe ? styles.myMessageBubble : styles.theirMessageBubble]}>
           {!isMe && <Text style={styles.messageUser}>{item.sender?.display_name || 'Anonymous'}</Text>}
           {item.type === 'image' && item.metadata?.imageUrl ? (
@@ -201,7 +201,6 @@ export default function ChatroomScreen() {
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messageList}
-          estimatedItemSize={100}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           ListHeaderComponent={<Text style={styles.roomMetaText}>#{roomRegion} • {messages.length} messages</Text>}
           ListEmptyComponent={
