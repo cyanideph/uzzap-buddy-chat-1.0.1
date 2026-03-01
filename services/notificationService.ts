@@ -33,7 +33,8 @@ export const notificationService = {
       return;
     }
 
-    const token = (await Notif.getExpoPushTokenAsync()).data;
+    const projectId = 'your-project-id-here'; // Ideally this should be from Constants.expoConfig.extra.eas.projectId
+    const token = (await Notif.getExpoPushTokenAsync({ projectId })).data;
     console.log(token);
 
     if (Platform.OS === 'android') {

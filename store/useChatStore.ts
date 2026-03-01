@@ -22,6 +22,7 @@ type ChatState = {
   addMessage: (chatroomId: string, message: Message) => void;
   setTyping: (chatroomId: string, userId: string, isTyping: boolean) => void;
   subscribeToChatroom: (chatroomId: string) => () => void;
+  leaveChatroom: (chatroomId: string, userId: string) => Promise<void>;
 };
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -156,5 +157,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return { channels: next };
       });
     };
+  },
+
+  leaveChatroom: async (chatroomId, userId) => {
+    try {
+      await chatroomService.leaveChatroom(chatroomId, userId);
+      set((state) => ({
+        chatrooms: state.chatrooms.filter((c) => c.id !== chatroomId),
+      }));
+    } catch (error) {
+      console.error('Error in leaveChatroom store action:', error);
+      throw error;
+    }
   },
 }));

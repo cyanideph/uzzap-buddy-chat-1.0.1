@@ -18,7 +18,7 @@ export default function ChatroomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { profile } = useAuthStore();
-  const { messages: chatroomMessages, fetchMessages, subscribeToChatroom, setActiveChatroom, setTyping, typingUsers } = useChatStore();
+  const { messages: chatroomMessages, fetchMessages, subscribeToChatroom, setActiveChatroom, setTyping, typingUsers, leaveChatroom } = useChatStore();
   const [message, setMessage] = useState('');
   const [room, setRoom] = useState<any>(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -158,6 +158,26 @@ export default function ChatroomScreen() {
     ]);
   };
 
+  const handleLeaveRoom = async () => {
+    if (!profile || !id) return;
+
+    Alert.alert('Leave Chatroom', 'Are you sure you want to leave this chatroom?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Leave',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await leaveChatroom(id as string, profile.id);
+            router.replace('/(tabs)/' as any);
+          } catch (error) {
+            Alert.alert('Error', 'Failed to leave chatroom. Please try again.');
+          }
+        },
+      },
+    ]);
+  };
+
   const renderMessage = ({ item }: { item: any }) => {
     const isMe = item.sender_id === profile?.id;
 
@@ -208,6 +228,9 @@ export default function ChatroomScreen() {
               </TouchableOpacity>
               <TouchableOpacity onPress={() => Alert.alert('Room Info', room?.description)}>
                 <Ionicons name="information-circle-outline" size={24} color={colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleLeaveRoom}>
+                <Ionicons name="log-out-outline" size={24} color={colors.error} />
               </TouchableOpacity>
             </View>
           ),

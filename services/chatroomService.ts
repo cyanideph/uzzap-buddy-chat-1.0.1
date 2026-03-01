@@ -105,7 +105,22 @@ export const chatroomService = {
 
     if (error) {
       console.error('Error leaving chatroom:', error);
+      throw error;
     }
+  },
+
+  async getUserChatrooms(userId: string): Promise<Chatroom[]> {
+    const { data, error } = await supabase
+      .from('chatroom_members')
+      .select('chatrooms(*)')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching user chatrooms:', error);
+      return [];
+    }
+
+    return data.map((item: any) => item.chatrooms).filter(Boolean);
   },
 
 
