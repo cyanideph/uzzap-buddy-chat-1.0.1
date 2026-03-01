@@ -1,0 +1,96 @@
+import React from 'react';
+import { Href, Stack, useRouter } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Container, Card } from '@/components/ui';
+import { colors, spacing, typography, borderRadius } from '@/constants/design';
+
+type SettingsLink = {
+  title: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  href: Href;
+};
+
+const helpItems: SettingsLink[] = [
+  { title: 'Help center / FAQ', icon: 'help-buoy-outline', href: '/settings/help-center' as Href },
+  { title: 'Contact support / ticket submission', icon: 'mail-outline', href: '/settings/contact-support' as Href },
+  { title: 'In-app feedback / feature requests', icon: 'bulb-outline', href: '/settings/feedback' as Href },
+  { title: 'Changelog / What’s new', icon: 'sparkles-outline', href: '/settings/changelog' as Href },
+];
+
+const legalItems: SettingsLink[] = [
+  { title: 'Terms of service', icon: 'document-text-outline', href: '/settings/terms-of-service' as Href },
+  { title: 'Privacy policy', icon: 'lock-closed-outline', href: '/settings/privacy-policy' as Href },
+  { title: 'Community guidelines', icon: 'people-outline', href: '/settings/community-guidelines' as Href },
+  { title: 'Open-source licenses', icon: 'code-slash-outline', href: '/settings/open-source-licenses' as Href },
+];
+
+export default function HelpLegalTrustScreen() {
+  const router = useRouter();
+
+  return (
+    <Container style={styles.container}>
+      <Stack.Screen options={{ headerShown: true, title: 'Help, Legal & Trust' }} />
+      <View style={styles.content}>
+        <Card variant="elevated" style={styles.card}>
+          <Card.Content>
+            <Text style={styles.sectionTitle}>Help</Text>
+            {helpItems.map((item) => (
+              <TouchableOpacity key={String(item.href)} style={styles.row} onPress={() => router.push(item.href)}>
+                <View style={styles.rowLeft}>
+                  <Ionicons name={item.icon} size={18} color={colors.accent} />
+                  <Text style={styles.rowLabel}>{item.title}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+              </TouchableOpacity>
+            ))}
+
+            <Text style={[styles.sectionTitle, styles.sectionSpacing]}>Legal & Trust</Text>
+            {legalItems.map((item) => (
+              <TouchableOpacity key={String(item.href)} style={styles.row} onPress={() => router.push(item.href)}>
+                <View style={styles.rowLeft}>
+                  <Ionicons name={item.icon} size={18} color={colors.primary} />
+                  <Text style={styles.rowLabel}>{item.title}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+              </TouchableOpacity>
+            ))}
+          </Card.Content>
+        </Card>
+      </View>
+    </Container>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { backgroundColor: colors.background },
+  content: { padding: spacing.md },
+  card: { backgroundColor: colors.backgroundSecondary },
+  sectionTitle: {
+    ...typography.h4,
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  sectionSpacing: {
+    marginTop: spacing.md,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  rowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.sm,
+    paddingRight: spacing.sm,
+  },
+  rowLabel: {
+    ...typography.body,
+    color: colors.textSecondary,
+    flex: 1,
+  },
+});

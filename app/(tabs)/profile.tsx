@@ -5,7 +5,7 @@ import { Card, Avatar, Container, Button, Input } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
 
@@ -188,6 +188,13 @@ export default function ProfileScreen() {
                   <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
                 </View>
                 <Text style={styles.settingText}>Privacy & Security</Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.border} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/settings/help-legal-trust' as Href)}>
+                <View style={styles.settingIconContainer}>
+                  <Ionicons name="help-circle-outline" size={20} color={colors.warning} />
+                </View>
+                <Text style={styles.settingText}>Help, Legal & Trust</Text>
                 <Ionicons name="chevron-forward" size={20} color={colors.border} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.settingItem} onPress={handleLogout}>
