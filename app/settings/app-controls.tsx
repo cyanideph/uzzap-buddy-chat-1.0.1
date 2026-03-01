@@ -1,0 +1,82 @@
+import React from 'react';
+import { Stack, useRouter } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Container, Card } from '@/components/ui';
+import { colors, spacing, typography, borderRadius } from '@/constants/design';
+import { Ionicons } from '@expo/vector-icons';
+
+type LinkRow = {
+  title: string;
+  subtitle: string;
+  route: '/settings/appearance' | '/settings/language' | '/settings/data-saver' | '/settings/accessibility' | '/settings/storage-usage' | '/settings/connected-accounts' | '/settings/backup-export' | '/settings/diagnostics';
+  icon: keyof typeof Ionicons.glyphMap;
+};
+
+const appControlItems: LinkRow[] = [
+  { title: 'Appearance', subtitle: 'Dark, light, or system theme', route: '/settings/appearance', icon: 'color-palette-outline' },
+  { title: 'Language', subtitle: 'Set your app language', route: '/settings/language', icon: 'language-outline' },
+  { title: 'Data Saver', subtitle: 'Autoplay and media download rules', route: '/settings/data-saver', icon: 'cellular-outline' },
+  { title: 'Accessibility', subtitle: 'Font size, contrast, and motion', route: '/settings/accessibility', icon: 'accessibility-outline' },
+  { title: 'Storage Usage', subtitle: 'Check and clear media cache', route: '/settings/storage-usage', icon: 'folder-open-outline' },
+  { title: 'Connected Accounts', subtitle: 'Manage linked sign-in providers', route: '/settings/connected-accounts', icon: 'link-outline' },
+  { title: 'Backup & Export', subtitle: 'Backup schedule and export data', route: '/settings/backup-export', icon: 'cloud-upload-outline' },
+  { title: 'Diagnostics', subtitle: 'Debug details for support', route: '/settings/diagnostics', icon: 'bug-outline' },
+];
+
+export default function AppControlsSettingsScreen() {
+  const router = useRouter();
+
+  return (
+    <Container style={styles.container}>
+      <Stack.Screen options={{ headerShown: true, title: 'Settings & App Controls' }} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <Card variant="elevated" style={styles.card}>
+          <Card.Content>
+            {appControlItems.map((item, index) => (
+              <TouchableOpacity
+                key={item.title}
+                style={[styles.row, index === appControlItems.length - 1 && styles.lastRow]}
+                onPress={() => router.push(item.route as any)}
+              >
+                <View style={styles.iconWrap}>
+                  <Ionicons name={item.icon} size={18} color={colors.accent} />
+                </View>
+                <View style={styles.rowText}>
+                  <Text style={styles.title}>{item.title}</Text>
+                  <Text style={styles.subtitle}>{item.subtitle}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.border} />
+              </TouchableOpacity>
+            ))}
+          </Card.Content>
+        </Card>
+      </ScrollView>
+    </Container>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { backgroundColor: colors.background },
+  content: { padding: spacing.md },
+  card: { backgroundColor: colors.backgroundSecondary },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+  },
+  lastRow: { borderBottomWidth: 0 },
+  iconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundTertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rowText: { flex: 1 },
+  title: { ...typography.bodyBold, color: colors.text },
+  subtitle: { ...typography.caption, color: colors.textSecondary },
+});

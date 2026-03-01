@@ -197,6 +197,13 @@ export default function ProfileScreen() {
                 <Text style={styles.settingText}>Help, Legal & Trust</Text>
                 <Ionicons name="chevron-forward" size={20} color={colors.border} />
               </TouchableOpacity>
+              <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/settings/app-controls' as Href)}>
+                <View style={styles.settingIconContainer}>
+                  <Ionicons name="options-outline" size={20} color={colors.info} />
+                </View>
+                <Text style={styles.settingText}>Settings & App Controls</Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.border} />
+              </TouchableOpacity>
               <TouchableOpacity style={styles.settingItem} onPress={handleLogout}>
                 <View style={[styles.settingIconContainer, { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
                   <Ionicons name="log-out-outline" size={20} color={colors.error} />
