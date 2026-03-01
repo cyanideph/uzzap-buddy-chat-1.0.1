@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Container, Input } from '@/components/ui';
+import { useQuery } from '@tanstack/react-query';
 import { colors, borderRadius, spacing, typography } from '@/constants/design';
 import { DiscoveryRoomCard } from '@/components/chatrooms/DiscoveryRoomCard';
 import { discoveryTabs, DiscoveryTab, getDiscoverRooms, getSavedRoomIds, markRoomVisited, toggleSavedRoom } from '@/lib/chatroomDiscovery';
@@ -25,14 +26,16 @@ export default function ChatroomDiscoverScreen() {
     getSavedRoomIds().then(setSavedIds);
   }, []);
 
-  const rooms = useMemo(() => {
-    const base = getDiscoverRooms(activeTab);
+  const { data: rooms = [], isLoading } = useQuery({
+    queryKey: ['chatrooms', 'discover', activeTab],
+    queryFn: () => getDiscoverRooms(activeTab),
+  });
+
+  const filteredRooms = rooms.filter((room) => {
     const normalized = search.trim().toLowerCase();
-
-    if (!normalized) return base;
-
-    return base.filter((room) => `${room.name} ${room.about} ${room.tags.join(' ')}`.toLowerCase().includes(normalized));
-  }, [activeTab, search]);
+    if (!normalized) return true;
+    return `${room.name} ${room.description} ${room.tags?.join(' ')}`.toLowerCase().includes(normalized);
+  });
 
   return (
     <Container>
@@ -59,21 +62,25 @@ export default function ChatroomDiscoverScreen() {
           ))}
         </View>
 
-        {rooms.map((room) => (
-          <DiscoveryRoomCard
-            key={room.id}
-            room={room}
-            saved={savedIds.includes(room.id)}
-            onSave={async () => {
-              const next = await toggleSavedRoom(room.id);
-              setSavedIds(next);
-            }}
-            onPress={async () => {
-              await markRoomVisited(room.id);
-              router.push(`/chatroom/${room.id}` as any);
-            }}
-          />
-        ))}
+        {isLoading ? (
+          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
+        ) : (
+          filteredRooms.map((room) => (
+            <DiscoveryRoomCard
+              key={room.id}
+              room={room as any}
+              saved={savedIds.includes(room.id)}
+              onSave={async () => {
+                const next = await toggleSavedRoom(room.id);
+                setSavedIds(next);
+              }}
+              onPress={async () => {
+                await markRoomVisited(room.id);
+                router.push(`/chatroom/${room.id}` as any);
+              }}
+            />
+          ))
+        )}
       </ScrollView>
     </Container>
   );

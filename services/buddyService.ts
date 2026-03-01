@@ -50,7 +50,7 @@ export const buddyService = {
   async getBuddyRequests(userId: string): Promise<(BuddyRequest & { sender?: Profile | null })[]> {
     const { data, error } = await supabase
       .from('buddy_requests')
-      .select('*')
+      .select('*, sender:profiles!buddy_requests_sender_id_fkey(*)')
       .eq('receiver_id', userId)
       .eq('status', 'pending');
 
@@ -59,14 +59,7 @@ export const buddyService = {
       return [];
     }
 
-    const enriched = await Promise.all(
-      data.map(async (request: any) => {
-        const { data: sender } = await supabase.from('profiles').select('*').eq('id', request.sender_id).maybeSingle();
-        return { ...request, sender };
-      })
-    );
-
-    return enriched;
+    return data;
   },
 
   async acceptBuddyRequest(requestId: string, senderId: string, receiverId: string) {

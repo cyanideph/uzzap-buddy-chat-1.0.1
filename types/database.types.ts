@@ -17,9 +17,18 @@ export type Chatroom = {
   name: string;
   description: string | null;
   slug: string;
-  type: 'public' | 'private' | 'direct';
+  type: 'public' | 'private' | 'direct' | 'discovery';
+  category: string | null;
+  tags: string[] | null;
+  region: string | null;
+  province: string | null;
+  language: string | null;
+  member_count: number;
+  online_count: number;
+  is_official: boolean;
   created_by: string | null;
   created_at: string;
+  last_activity_at: string;
 };
 
 export type ChatroomMember = {
@@ -62,5 +71,5 @@ export type MessageRead = {
   id: string;
   message_id: string;
   user_id: string;
-  read_at: string;
+  read_at: string | null;
 };

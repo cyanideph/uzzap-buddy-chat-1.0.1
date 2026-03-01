@@ -2,14 +2,79 @@ import { supabase } from '../lib/supabase';
 import { Chatroom, ChatroomMember, Profile } from '../types/database.types';
 
 export const chatroomService = {
-  async getChatrooms(): Promise<Chatroom[]> {
-    const { data, error } = await supabase
-      .from('chatrooms')
-      .select('*')
-      .order('name', { ascending: true });
+  async getChatrooms(type?: 'public' | 'private' | 'direct' | 'discovery'): Promise<Chatroom[]> {
+    let query = supabase.from('chatrooms').select('*');
+    
+    if (type) {
+      query = query.eq('type', type);
+    }
+
+    const { data, error } = await query.order('last_activity_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching chatrooms:', error);
+      return [];
+    }
+
+    return data;
+  },
+
+  async getChatroomsByCategory(category: string): Promise<Chatroom[]> {
+    const { data, error } = await supabase
+      .from('chatrooms')
+      .select('*')
+      .eq('category', category)
+      .order('member_count', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching chatrooms by category:', error);
+      return [];
+    }
+
+    return data;
+  },
+
+  async searchChatrooms(searchTerm: string): Promise<Chatroom[]> {
+    const { data, error } = await supabase
+      .from('chatrooms')
+      .select('*')
+      .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
+      .order('member_count', { ascending: false });
+
+    if (error) {
+      console.error('Error searching chatrooms:', error);
+      return [];
+    }
+
+    return data;
+  },
+
+  async getTrendingChatrooms(): Promise<Chatroom[]> {
+    const { data, error } = await supabase
+      .from('chatrooms')
+      .select('*')
+      .eq('type', 'discovery')
+      .order('member_count', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Error fetching trending chatrooms:', error);
+      return [];
+    }
+
+    return data;
+  },
+
+  async getNewChatrooms(): Promise<Chatroom[]> {
+    const { data, error } = await supabase
+      .from('chatrooms')
+      .select('*')
+      .eq('type', 'discovery')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Error fetching new chatrooms:', error);
       return [];
     }
 
@@ -55,6 +120,48 @@ export const chatroomService = {
     }
 
     return data.map((item: any) => item.profiles);
+  },
+
+  async createChatroom(params: {
+    name: string;
+    description?: string;
+    type: 'public' | 'private' | 'discovery';
+    category?: string;
+    tags?: string[];
+    region?: string;
+    language?: string;
+    userId: string;
+  }): Promise<Chatroom | null> {
+    const slug = params.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    
+    const { data, error } = await supabase
+      .from('chatrooms')
+      .insert([{
+        name: params.name,
+        description: params.description,
+        slug,
+        type: params.type,
+        category: params.category,
+        tags: params.tags,
+        region: params.region,
+        language: params.language,
+        created_by: params.userId,
+        last_activity_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating chatroom:', error);
+      return null;
+    }
+
+    // Add creator as admin member
+    await supabase.from('chatroom_members').insert([
+      { chatroom_id: data.id, user_id: params.userId, role: 'admin' }
+    ]);
+
+    return data;
   },
 
   async createDirectChat(userId: string, buddyId: string): Promise<Chatroom | null> {

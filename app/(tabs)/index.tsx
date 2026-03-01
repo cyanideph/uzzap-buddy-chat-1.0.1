@@ -16,6 +16,8 @@ type ChatroomItem = {
   description?: string | null;
   region?: string | null;
   province?: string | null;
+  category?: string | null;
+  member_count?: number;
 };
 
 const PHILIPPINES_REGIONS: Record<string, string[]> = {
@@ -51,7 +53,7 @@ const PHILIPPINES_REGIONS: Record<string, string[]> = {
   'Region IX (Zamboanga Peninsula)': ['Zamboanga del Norte', 'Zamboanga del Sur', 'Zamboanga Sibugay'],
   'Region X (Northern Mindanao)': ['Bukidnon', 'Camiguin', 'Lanao del Norte', 'Misamis Occidental', 'Misamis Oriental'],
   'Region XI (Davao Region)': ['Davao de Oro', 'Davao del Norte', 'Davao del Sur', 'Davao Occidental', 'Davao Oriental'],
-  'Region XII (SOCCSKSARGEN)': ['Cotabato', 'Sarangani', 'South Cotabato', 'Sultan Kudarat'],
+  'Region XII (SOCCSARGEN)': ['Cotabato', 'Sarangani', 'South Cotabato', 'Sultan Kudarat'],
   'Region XIII (Caraga)': ['Agusan del Norte', 'Agusan del Sur', 'Dinagat Islands', 'Surigao del Norte', 'Surigao del Sur'],
   'BARMM': ['Basilan', 'Lanao del Sur', 'Maguindanao del Norte', 'Maguindanao del Sur', 'Sulu', 'Tawi-Tawi', 'Cotabato City'],
 };
@@ -194,8 +196,11 @@ export default function ChatroomListScreen() {
         .insert({
           name: finalRoomName,
           slug: `${finalRoomName.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')}-${Date.now()}`,
-          description: `${newRoomRegion} > ${newRoomProvince}${newRoomDescription ? `: ${newRoomDescription}` : ''}`,
+          description: newRoomDescription || `${newRoomRegion} > ${newRoomProvince} Community chatroom`,
           type: 'public',
+          region: newRoomRegion,
+          province: newRoomProvince,
+          category: 'Lifestyle',
           created_by: profile.id,
         })
         .select()
