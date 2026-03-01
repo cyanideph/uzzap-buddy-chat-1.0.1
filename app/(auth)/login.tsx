@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
-import { colors, spacing, typography, borderRadius } from '@/constants/design';
+import { colors, spacing, typography, borderRadius, shadows, withOpacity } from '@/constants/design';
 import { Button, Input, Container } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -15,7 +16,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter your email and password');
+      Alert.alert('Missing details', 'Please enter your email and password to continue.');
       return;
     }
 
@@ -35,47 +36,38 @@ export default function LoginScreen() {
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      Alert.alert('Reset Password', 'Please enter your email first.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-      if (error) throw error;
-      Alert.alert('Check your email', 'A password reset link has been sent.');
-    } catch (error: any) {
-      Alert.alert('Reset Failed', error.message || 'Unable to send reset email.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
   return (
     <Container style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Animated.View entering={FadeInUp.delay(200).duration(800)} style={styles.header}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoText}>U</Text>
-          </View>
-          <Text style={styles.title}>UZZAP</Text>
-          <Text style={styles.subtitle}>Welcome back, buddy!</Text>
+        <Animated.View entering={FadeInUp.delay(150).duration(700)}>
+          <LinearGradient
+            colors={[withOpacity(colors.primary, 0.2), withOpacity(colors.secondary, 0.95)]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroCard}
+          >
+            <View style={styles.logoCircle}>
+              <Text style={styles.logoText}>U</Text>
+            </View>
+            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.subtitle}>Sign in and continue chatting with your buddies.</Text>
+          </LinearGradient>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(400).duration(800)} style={styles.form}>
+        <Animated.View entering={FadeInUp.delay(300).duration(700)} style={styles.formCard}>
           <Input
             label="Email Address"
-            placeholder="Enter your email"
+            placeholder="name@example.com"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            clearable
             leftIcon={<Ionicons name="mail-outline" size={20} color={colors.textSecondary} />}
           />
-          <View style={{ height: spacing.md }} />
+
+          <View style={styles.fieldSpacer} />
+
           <Input
             label="Password"
             placeholder="Enter your password"
@@ -85,30 +77,31 @@ export default function LoginScreen() {
             leftIcon={<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />}
           />
 
-          <TouchableOpacity style={styles.forgotPassword} onPress={handleForgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          <TouchableOpacity style={styles.forgotPassword} onPress={() => router.push('/(auth)/forgot-password' as any)}>
+            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
           </TouchableOpacity>
 
-          <Button
-            variant="primary"
-            size="lg"
-            onPress={handleLogin}
-            loading={loading}
-            style={styles.loginButton}
-          >
-            Login
-          </Button>
+          <View style={styles.loginButton}>
+            <Button
+              variant="primary"
+              size="lg"
+              onPress={handleLogin}
+              loading={loading}
+            >
+              Sign In
+            </Button>
+          </View>
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
+            <Text style={styles.dividerText}>NEW HERE?</Text>
             <View style={styles.dividerLine} />
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
+            <Text style={styles.footerText}>Don&apos;t have an account yet? </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-              <Text style={styles.registerLink}>Register</Text>
+              <Text style={styles.registerLink}>Create one</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -123,45 +116,56 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: spacing.xl,
-    paddingTop: 60,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
+    gap: spacing.lg,
   },
-  header: {
+  heroCard: {
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: withOpacity(colors.primary, 0.2),
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
     alignItems: 'center',
-    marginBottom: spacing.xxl,
+    ...shadows.md,
   },
   logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: withOpacity(colors.primary, 0.25),
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.md,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
   },
   logoText: {
     ...typography.h1,
     color: colors.text,
-    fontSize: 40,
+    fontSize: 36,
   },
   title: {
-    ...typography.h1,
+    ...typography.h2,
     color: colors.text,
-    letterSpacing: 2,
+    textAlign: 'center',
   },
   subtitle: {
     ...typography.body,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+    textAlign: 'center',
   },
-  form: {
+  formCard: {
     width: '100%',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.lg,
+    ...shadows.sm,
+  },
+  fieldSpacer: {
+    height: spacing.md,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
@@ -169,7 +173,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   forgotPasswordText: {
-    ...typography.small,
+    ...typography.captionBold,
     color: colors.accent,
   },
   loginButton: {
@@ -179,7 +183,7 @@ const styles = StyleSheet.create({
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: spacing.xl,
+    marginVertical: spacing.lg,
   },
   dividerLine: {
     flex: 1,
@@ -187,14 +191,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   dividerText: {
-    ...typography.caption,
+    ...typography.smallBold,
     color: colors.textTertiary,
     marginHorizontal: spacing.md,
+    letterSpacing: 0.8,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: spacing.md,
   },
   footerText: {
     ...typography.body,
