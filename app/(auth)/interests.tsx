@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Button, Container } from '@/components/ui';
 import { borderRadius, colors, spacing, typography, withOpacity } from '@/constants/design';
-import { INTEREST_OPTIONS } from './_onboardingData';
+import { INTEREST_OPTIONS } from '@/constants/onboardingData';
 
 export default function InterestsScreen() {
   const router = useRouter();

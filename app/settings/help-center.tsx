@@ -1,5 +1,5 @@
 import React from 'react';
-import { InfoScreen } from './components/InfoScreen';
+import { InfoScreen } from '@/components/settings/InfoScreen';
 
 export default function HelpCenterScreen() {
   return (

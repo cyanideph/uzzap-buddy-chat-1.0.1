@@ -73,7 +73,6 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: themeColors.background } }}>
           <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
           <Stack.Screen name="(auth)/login" />
           <Stack.Screen name="(auth)/register" />
           <Stack.Screen name="(auth)/forgot-password" />

@@ -5,7 +5,7 @@ import * as Location from 'expo-location';
 
 import { Button, Container } from '@/components/ui';
 import { borderRadius, colors, spacing, typography } from '@/constants/design';
-import { PH_REGIONS } from './_onboardingData';
+import { PH_REGIONS } from '@/constants/onboardingData';
 
 export default function LocationSetupScreen() {
   const router = useRouter();
