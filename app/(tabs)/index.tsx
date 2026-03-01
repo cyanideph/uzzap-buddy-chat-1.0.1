@@ -153,6 +153,25 @@ export default function ChatroomListScreen() {
     setPickerModalVisible(false);
   };
 
+  const handleProvinceSelect = (province: string) => {
+    setSelectedProvince(province);
+    setPickerModalVisible(false);
+
+    if (province === 'All Provinces') return;
+
+    const matchingRoom = (chatrooms as ChatroomItem[]).find((room) => {
+      const location = parseRoomLocation(room);
+      return location.province.toLowerCase() === province.toLowerCase();
+    });
+
+    if (matchingRoom) {
+      router.push(`/chatroom/${matchingRoom.id}` as any);
+      return;
+    }
+
+    Alert.alert('No room yet', `No chatroom found for ${province}. You can create one below.`);
+  };
+
   const handleCreateRoom = async () => {
     if (!profile || !newRoomRegion || !newRoomProvince) {
       Alert.alert('Error', 'Please choose a region and province.');
@@ -375,8 +394,7 @@ export default function ChatroomListScreen() {
                     if (pickerType === 'region') {
                       applyRegion(option);
                     } else {
-                      setSelectedProvince(option);
-                      setPickerModalVisible(false);
+                      handleProvinceSelect(option);
                     }
                   }}
                   style={styles.pickerItem}
