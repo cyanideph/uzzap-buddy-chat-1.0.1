@@ -164,7 +164,6 @@ export const chatroomService = {
       .update({
         description: updates.description,
         tags: updates.tags,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', chatroomId)
       .select('*')

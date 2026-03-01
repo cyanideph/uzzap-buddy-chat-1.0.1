@@ -28,6 +28,7 @@ export type Chatroom = {
   is_official: boolean;
   created_by: string | null;
   created_at: string;
+  updated_at: string;
   last_activity_at: string;
 };
 
