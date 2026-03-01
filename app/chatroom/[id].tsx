@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/design';
 import { Container, Avatar } from '@/components/ui';
@@ -12,9 +12,11 @@ import { useChatStore } from '@/store/useChatStore';
 import { messageService } from '@/services/messageService';
 import { chatroomService } from '@/services/chatroomService';
 import * as ImagePicker from 'expo-image-picker';
+import { markRoomVisited, mockChatrooms } from '@/lib/chatroomDiscovery';
 
 export default function ChatroomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { profile } = useAuthStore();
   const { messages: chatroomMessages, fetchMessages, subscribeToChatroom, setActiveChatroom, setTyping, typingUsers } = useChatStore();
   const [message, setMessage] = useState('');
@@ -27,12 +29,14 @@ export default function ChatroomScreen() {
   const messages = useMemo(() => chatroomMessages[id as string] || [], [chatroomMessages, id]);
   const activeTyping = Array.from(typingUsers[id as string] || []).filter((userId) => userId !== profile?.id);
   const roomRegion = (room?.description || '').split(':')[0] || 'General';
+  const roomDetail = useMemo(() => mockChatrooms.find((item) => item.id === id), [id]);
 
   useEffect(() => {
     if (!id || !profile) return;
 
     const setupChat = async () => {
       setRoomLoading(true);
+      await markRoomVisited(id as string);
 
       await chatroomService.joinChatroom(id as string, profile.id);
 
@@ -202,7 +206,21 @@ export default function ChatroomScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messageList}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          ListHeaderComponent={<Text style={styles.roomMetaText}>#{roomRegion} • {messages.length} messages</Text>}
+          ListHeaderComponent={
+            <View style={styles.detailCard}>
+              <Text style={styles.detailTitle}>{roomDetail?.name || room?.name}</Text>
+              <Text style={styles.roomMetaText}>#{roomRegion} • {roomDetail?.memberCount || 0} members • {messages.length} messages</Text>
+              <Text style={styles.detailAbout}>{roomDetail?.about || room?.description || 'No room description yet.'}</Text>
+              {roomDetail?.rules?.map((rule) => (
+                <Text key={rule} style={styles.detailRule}>• {rule}</Text>
+              ))}
+              <Text style={styles.detailAdmins}>Admins: {roomDetail?.admins?.join(', ') || 'TBD'}</Text>
+              <View style={styles.detailActions}>
+                <TouchableOpacity style={styles.detailActionBtn} onPress={() => router.push(`/chatrooms/members/${id}` as any)}><Text style={styles.detailActionText}>Members</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.detailActionBtn} onPress={() => router.push(`/chatrooms/edit/${id}` as any)}><Text style={styles.detailActionText}>Edit Settings</Text></TouchableOpacity>
+              </View>
+            </View>
+          }
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Ionicons name="chatbubble-ellipses-outline" size={44} color={colors.border} />
@@ -245,6 +263,30 @@ const styles = StyleSheet.create({
   container: { backgroundColor: colors.background },
   centered: { justifyContent: 'center', alignItems: 'center' },
   messageList: { padding: spacing.md, paddingBottom: spacing.xl },
+
+  detailCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  detailTitle: { ...typography.h4, color: colors.text },
+  detailAbout: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs },
+  detailRule: { ...typography.small, color: colors.textSecondary, marginTop: 2 },
+  detailAdmins: { ...typography.smallBold, color: colors.accent, marginTop: spacing.sm },
+  detailActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  detailActionBtn: {
+    flex: 1,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundTertiary,
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  detailActionText: { ...typography.smallBold, color: colors.text },
   roomMetaText: {
     ...typography.small,
     color: colors.textTertiary,
