@@ -1,76 +1,22 @@
 # App Flow Analysis (Uzzap Buddy Chat)
 
-## 1) Current App Flow (high-level)
+## 1) Current flow
 
-1. App starts in `app/index.tsx` and immediately redirects to `/ (auth)/login`.
-2. Root layout bootstraps auth (`useAuthStore.initialize()`), then route-guards based on `user` + current segment.
-3. Successful auth routes users into `(tabs)` where the main chatroom list is shown.
-4. Opening a room (`/chatroom/[id]`) auto-joins the user, fetches room metadata/messages, subscribes to realtime inserts, and enables typing + message sends.
-5. Register flow creates both auth user and `profiles` row, then pushes to email verification.
+1. App starts in `app/index.tsx`, waits for auth store bootstrap, then redirects based on auth state.
+2. Root layout initializes auth state and applies route guards between auth and protected areas.
+3. Authenticated users land in `(tabs)` and can open chatrooms.
+4. Chatroom screen joins room membership, loads room/messages, restores draft, and subscribes to realtime updates.
 
-## 2) Flow Issues Found
+## 2) Resolved gaps
 
-### Issue A — Conflicting initial navigation causes route flicker and deep-link disruption
-- `app/index.tsx` always redirects to login immediately.
-- Root layout independently re-routes users based on auth state.
-- This can cause a visible auth-screen flash for already-authenticated users and may interfere with deep links by forcing an unnecessary auth route hop.
+- Login no longer force-navigates to tabs after sign-in; it relies on root auth guard.
+- Chatroom setup now has guarded async flow with error handling and loading state cleanup.
+- Typing timeout is cleared during unmount cleanup.
 
-**Where seen**
-- `app/index.tsx`
-- `app/_layout.tsx`
+## 3) Remaining risks and missing pieces
 
-### Issue B — Login screen performs direct tab navigation before auth store settles
-- `login.tsx` calls `router.replace('/(tabs)')` immediately after `signInWithPassword`.
-- Root guard in `_layout.tsx` is already responsible for auth routing.
-- If profile fetch in store initialization lags/fails, users can bounce between stacks or land in tabs without profile-dependent data ready.
-
-**Where seen**
-- `app/(auth)/login.tsx`
-- `app/_layout.tsx`
-- `store/useAuthStore.ts`
-
-### Issue C — Duplicate auth management model (unused context + Zustand store)
-- There is a full `AuthContext` implementation, but the app uses `useAuthStore` in routing/screens.
-- Keeping two auth sources increases maintenance risk and onboarding confusion; stale implementation could diverge silently.
-
-**Where seen**
-- `context/AuthContext.tsx`
-- usage search shows no `AuthProvider` mounts
-
-### Issue D — Chatroom setup effect can leave screen stuck on loading when network/API fails
-- In `/chatroom/[id]`, `setupChat` does async joins/fetches without `try/catch`.
-- If `joinChatroom` or `getChatroomById` fails, `setRoomLoading(false)` may never run, leaving indefinite spinner.
-
-**Where seen**
-- `app/chatroom/[id].tsx`
-- `services/chatroomService.ts`
-
-### Issue E — Async cleanup pattern in chatroom subscription is fragile
-- Effect cleanup stores `const cleanup = setupChat();` and later calls `cleanup.then(...)`.
-- Unsubscribe is delayed until promise resolution; during quick navigation this can leave short-lived duplicate subscriptions and extra notifications.
-
-**Where seen**
-- `app/chatroom/[id].tsx`
-- `store/useChatStore.ts`
-
-### Issue F — Typing timeout not cleared on unmount
-- `typingTimeoutRef` is set repeatedly in `handleTyping`, but no cleanup effect clears timeout on unmount.
-- This can trigger late typing state writes after leaving room.
-
-**Where seen**
-- `app/chatroom/[id].tsx`
-
-### Issue G — Membership/room counters can drift from real state
-- Joining/leaving rooms updates membership rows, but no coordinated counter update is performed in the same flow (`member_count`, `last_activity_at` consistency depends on DB triggers not visible in app code).
-- If DB trigger is absent/misconfigured, list sorting and room stats become inaccurate.
-
-**Where seen**
-- `services/chatroomService.ts`
-- `app/chatroom/[id].tsx`
-
-### Issue H — Service methods hide failures and reduce UI recoverability
-- Multiple service methods catch errors and return `null`/`[]` without surfacing typed errors.
-- UI screens often continue as if operation succeeded, preventing specific remediation messaging and retry strategies.
+### A) Service error contract is inconsistent
+Service methods return `null`/`[]` in some failures, while other flows throw errors. This makes UI retry and specific error messaging harder.
 
 **Where seen**
 - `services/authService.ts`
@@ -78,18 +24,16 @@
 - `services/messageService.ts`
 - `services/buddyService.ts`
 
-### Issue I — Hardcoded Supabase endpoint/key fallback couples app to one backend
-- Supabase URL and anon key are embedded as defaults if env vars are absent.
-- This can accidentally point local/dev builds to production-like backend and complicates environment isolation.
+### B) Backend guarantees are implicit
+Room counters/activity consistency appears to depend on DB-side logic that is not represented in this repo (no migrations/schema/policies committed).
 
 **Where seen**
-- `lib/supabase.ts`
+- `services/chatroomService.ts`
 
-## 3) Suggested Priority Order
+### C) Missing backend artifacts in repository
+No migration/schema or policy files are present, making reproducible environments and audits difficult.
 
-1. **P0:** Fix startup/auth navigation conflicts (Issues A+B).
-2. **P0:** Harden chatroom screen setup + cleanup to avoid stuck loading and ghost subscriptions (Issues D+E+F).
-3. **P1:** Standardize error propagation contract for services (Issue H).
-4. **P1:** Decide on one auth state architecture and remove dead path (Issue C).
-5. **P2:** Remove hardcoded backend fallback; require explicit env in non-dev builds (Issue I).
-6. **P2:** Ensure membership/activity counters are guaranteed via RPC/transaction/DB trigger checks (Issue G).
+**Suggested priority**
+1. Standardize service error result types (P1)
+2. Add schema/migration/policy artifacts to repo (P1)
+3. Add integration checks against staging Supabase (P2)

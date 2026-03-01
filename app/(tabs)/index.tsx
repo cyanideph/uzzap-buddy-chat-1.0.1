@@ -111,8 +111,6 @@ export default function ChatroomListScreen() {
   const [pickerModalVisible, setPickerModalVisible] = useState(false);
   const [pickerType, setPickerType] = useState<'region' | 'province'>('region');
 
-  const [creating, setCreating] = useState(false);
-
   const ensureProvinceChatroom = async (province: string, regionHint?: string) => {
     if (!profile) {
       Alert.alert('Login required', 'Please log in to join a provincial chatroom.');
@@ -130,7 +128,6 @@ export default function ChatroomListScreen() {
       return;
     }
 
-    setCreating(true);
     try {
       const finalRoomName = `${province} Community`;
       const { data, error } = await supabase
@@ -154,8 +151,6 @@ export default function ChatroomListScreen() {
       router.push(`/chatroom/${data.id}` as any);
     } catch {
       Alert.alert('Error', 'Unable to join this province right now. Please try again.');
-    } finally {
-      setCreating(false);
     }
   };
 
