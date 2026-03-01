@@ -43,8 +43,8 @@ import type { ContainerProps } from './Container.types';
 
 export function Container({
   children,
-  safeArea = false,
-  edges = ['top', 'bottom', 'left', 'right'],
+  safeArea = true,
+  edges = ['top', 'bottom'],
   padding,
   center = false,
   backgroundColor = colors.background,
