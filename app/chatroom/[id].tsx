@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useChatStore } from '@/store/useChatStore';
 import { messageService } from '@/services/messageService';
 import { chatroomService } from '@/services/chatroomService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { markRoomVisited, mockChatrooms } from '@/lib/chatroomDiscovery';
 
@@ -23,8 +24,10 @@ export default function ChatroomScreen() {
   const [room, setRoom] = useState<any>(null);
   const [roomLoading, setRoomLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [replyTo, setReplyTo] = useState<any>(null);
   const flatListRef = useRef<FlashListRef<any>>(null);
   const typingTimeoutRef = useRef<any>(null);
+  const draftKey = `draft:${id}`;
 
   const messages = useMemo(() => chatroomMessages[id as string] || [], [chatroomMessages, id]);
   const activeTyping = Array.from(typingUsers[id as string] || []).filter((userId) => userId !== profile?.id);
@@ -44,6 +47,8 @@ export default function ChatroomScreen() {
       setRoom(data);
 
       await fetchMessages(id as string);
+      const savedDraft = await AsyncStorage.getItem(draftKey);
+      if (savedDraft) setMessage(savedDraft);
       setRoomLoading(false);
 
       const unsubscribe = subscribeToChatroom(id as string);
@@ -57,7 +62,12 @@ export default function ChatroomScreen() {
       cleanup.then((unsub) => unsub?.());
       setActiveChatroom(null);
     };
-  }, [id, profile, fetchMessages, setActiveChatroom, subscribeToChatroom]);
+  }, [draftKey, id, profile, fetchMessages, setActiveChatroom, subscribeToChatroom]);
+
+  useEffect(() => {
+    if (!id) return;
+    AsyncStorage.setItem(draftKey, message);
+  }, [draftKey, id, message]);
 
 
   useEffect(() => {
@@ -91,8 +101,11 @@ export default function ChatroomScreen() {
         sender_id: profile.id,
         content: message.trim(),
         type: 'text',
+        reply_to: replyTo?.id || null,
       });
       setMessage('');
+      setReplyTo(null);
+      await AsyncStorage.removeItem(draftKey);
       setTyping(id as string, profile.id, false);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -122,8 +135,10 @@ export default function ChatroomScreen() {
         sender_id: profile.id,
         content: '📷 Image',
         type: 'image',
+        reply_to: replyTo?.id || null,
         metadata: { imageUrl },
       });
+      setReplyTo(null);
     } catch (error: any) {
       Alert.alert('Image send failed', error.message || 'Unable to send image.');
     } finally {
@@ -152,6 +167,7 @@ export default function ChatroomScreen() {
       <TouchableOpacity
         style={[styles.messageWrapper, isMe ? styles.myMessageWrapper : styles.theirMessageWrapper]}
         onLongPress={() => isMe && handleDeleteMessage(item.id)}
+        onPress={() => setReplyTo(item)}
         delayLongPress={300}
       >
         {!isMe && <Avatar source={item.sender?.avatar_url ? { uri: item.sender.avatar_url } : undefined} size="sm" style={styles.messageAvatar} />}
@@ -188,9 +204,14 @@ export default function ChatroomScreen() {
           headerStyle: { backgroundColor: colors.backgroundSecondary },
           headerTitleStyle: { ...typography.h4, color: colors.text },
           headerRight: () => (
-            <TouchableOpacity onPress={() => Alert.alert('Room Info', room?.description)}>
-              <Ionicons name="information-circle-outline" size={24} color={colors.text} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: spacing.md }}>
+              <TouchableOpacity onPress={() => router.push(`/chatroom/experience/${id}` as any)}>
+                <Ionicons name="grid-outline" size={22} color={colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => Alert.alert('Room Info', room?.description)}>
+                <Ionicons name="information-circle-outline" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
@@ -219,6 +240,10 @@ export default function ChatroomScreen() {
                 <TouchableOpacity style={styles.detailActionBtn} onPress={() => router.push(`/chatrooms/members/${id}` as any)}><Text style={styles.detailActionText}>Members</Text></TouchableOpacity>
                 <TouchableOpacity style={styles.detailActionBtn} onPress={() => router.push(`/chatrooms/edit/${id}` as any)}><Text style={styles.detailActionText}>Edit Settings</Text></TouchableOpacity>
               </View>
+              <TouchableOpacity style={styles.experienceBtn} onPress={() => router.push(`/chatroom/experience/${id}` as any)}>
+                <Ionicons name="sparkles-outline" size={16} color={colors.white} />
+                <Text style={styles.experienceBtnText}>Messaging Experience</Text>
+              </TouchableOpacity>
             </View>
           }
           ListEmptyComponent={
@@ -232,6 +257,18 @@ export default function ChatroomScreen() {
 
         {activeTyping.length > 0 && (
           <Text style={styles.typingText}>Someone is typing...</Text>
+        )}
+
+        {replyTo && (
+          <View style={styles.replyBar}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.replyLabel}>Replying to {replyTo.sender?.display_name || 'message'}</Text>
+              <Text style={styles.replySnippet} numberOfLines={1}>{replyTo.content}</Text>
+            </View>
+            <TouchableOpacity onPress={() => setReplyTo(null)}>
+              <Ionicons name="close" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         )}
 
         <View style={styles.inputContainer}>
@@ -287,6 +324,17 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   detailActionText: { ...typography.smallBold, color: colors.text },
+  experienceBtn: {
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.xs,
+  },
+  experienceBtnText: { ...typography.smallBold, color: colors.white },
   roomMetaText: {
     ...typography.small,
     color: colors.textTertiary,
@@ -323,6 +371,20 @@ const styles = StyleSheet.create({
   messageTime: { ...typography.tiny, color: 'rgba(255,255,255,0.5)', alignSelf: 'flex-end', marginTop: 2 },
   messageImage: { width: 180, height: 180, borderRadius: borderRadius.md },
   typingText: { ...typography.caption, color: colors.textSecondary, marginLeft: spacing.md, marginBottom: spacing.xs },
+  replyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.sm,
+    marginBottom: spacing.xs,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+  },
+  replyLabel: { ...typography.tiny, color: colors.accent },
+  replySnippet: { ...typography.caption, color: colors.textSecondary },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
