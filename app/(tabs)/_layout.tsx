@@ -2,9 +2,14 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, borderRadius, withOpacity } from '@/constants/design';
-import { Platform } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const compactLayout = width < 380;
+
   return (
     <Tabs
       screenOptions={{
@@ -14,17 +19,17 @@ export default function TabLayout() {
           backgroundColor: colors.backgroundSecondary,
           borderTopColor: withOpacity(colors.primary, 0.2),
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 92 : 70,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 12,
-          paddingTop: 10,
-          paddingHorizontal: 10,
+          height: Platform.OS === 'ios' ? 64 + insets.bottom : 64,
+          paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 12) : 12,
+          paddingTop: compactLayout ? 8 : 10,
+          paddingHorizontal: compactLayout ? 6 : 10,
         },
         tabBarItemStyle: {
           borderRadius: borderRadius.lg,
         },
         tabBarLabelStyle: {
           ...typography.smallBold,
-          marginTop: -2,
+          marginTop: compactLayout ? -1 : -2,
         },
         tabBarActiveBackgroundColor: withOpacity(colors.primary, 0.16),
         tabBarHideOnKeyboard: true,

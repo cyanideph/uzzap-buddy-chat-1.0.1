@@ -9,6 +9,7 @@ import { colors } from '@/constants/design';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authService } from '@/services/authService';
 import { notificationService } from '@/services/notificationService';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -65,57 +66,59 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: themeColors.background } }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(auth)/login" />
-        <Stack.Screen name="(auth)/register" />
-        <Stack.Screen name="(auth)/forgot-password" />
-        <Stack.Screen name="(auth)/welcome" />
-        <Stack.Screen name="(auth)/interests" />
-        <Stack.Screen name="(auth)/location" />
-        <Stack.Screen name="(auth)/username-check" />
-        <Stack.Screen name="(auth)/email-verification" />
-        <Stack.Screen name="(auth)/account-recovery-status" />
-        <Stack.Screen name="(auth)/complete-profile" />
-        <Stack.Screen name="(auth)/invite-friends" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="chatroom/[id]" />
-        <Stack.Screen name="chatroom/experience/[id]" />
-        <Stack.Screen name="chatrooms/discover" />
-        <Stack.Screen name="chatrooms/recent" />
-        <Stack.Screen name="chatrooms/search" />
-        <Stack.Screen name="chatrooms/saved" />
-        <Stack.Screen name="chatrooms/categories" />
-        <Stack.Screen name="chatrooms/join-requests" />
-        <Stack.Screen name="chatrooms/create" />
-        <Stack.Screen name="chatrooms/members/[id]" />
-        <Stack.Screen name="chatrooms/edit/[id]" />
-        <Stack.Screen name="profile/[id]" />
-        <Stack.Screen name="settings/help-legal-trust" />
-        <Stack.Screen name="settings/app-controls" />
-        <Stack.Screen name="settings/notifications" />
-        <Stack.Screen name="settings/privacy" />
-        <Stack.Screen name="settings/appearance" />
-        <Stack.Screen name="settings/language" />
-        <Stack.Screen name="settings/data-saver" />
-        <Stack.Screen name="settings/accessibility" />
-        <Stack.Screen name="settings/storage-usage" />
-        <Stack.Screen name="settings/connected-accounts" />
-        <Stack.Screen name="settings/backup-export" />
-        <Stack.Screen name="settings/diagnostics" />
-        <Stack.Screen name="settings/help-center" />
-        <Stack.Screen name="settings/contact-support" />
-        <Stack.Screen name="settings/feedback" />
-        <Stack.Screen name="settings/changelog" />
-        <Stack.Screen name="settings/terms-of-service" />
-        <Stack.Screen name="settings/privacy-policy" />
-        <Stack.Screen name="settings/community-guidelines" />
-        <Stack.Screen name="settings/open-source-licenses" />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style={statusBarStyle} />
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: themeColors.background } }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(auth)/login" />
+          <Stack.Screen name="(auth)/register" />
+          <Stack.Screen name="(auth)/forgot-password" />
+          <Stack.Screen name="(auth)/welcome" />
+          <Stack.Screen name="(auth)/interests" />
+          <Stack.Screen name="(auth)/location" />
+          <Stack.Screen name="(auth)/username-check" />
+          <Stack.Screen name="(auth)/email-verification" />
+          <Stack.Screen name="(auth)/account-recovery-status" />
+          <Stack.Screen name="(auth)/complete-profile" />
+          <Stack.Screen name="(auth)/invite-friends" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="chatroom/[id]" />
+          <Stack.Screen name="chatroom/experience/[id]" />
+          <Stack.Screen name="chatrooms/discover" />
+          <Stack.Screen name="chatrooms/recent" />
+          <Stack.Screen name="chatrooms/search" />
+          <Stack.Screen name="chatrooms/saved" />
+          <Stack.Screen name="chatrooms/categories" />
+          <Stack.Screen name="chatrooms/join-requests" />
+          <Stack.Screen name="chatrooms/create" />
+          <Stack.Screen name="chatrooms/members/[id]" />
+          <Stack.Screen name="chatrooms/edit/[id]" />
+          <Stack.Screen name="profile/[id]" />
+          <Stack.Screen name="settings/help-legal-trust" />
+          <Stack.Screen name="settings/app-controls" />
+          <Stack.Screen name="settings/notifications" />
+          <Stack.Screen name="settings/privacy" />
+          <Stack.Screen name="settings/appearance" />
+          <Stack.Screen name="settings/language" />
+          <Stack.Screen name="settings/data-saver" />
+          <Stack.Screen name="settings/accessibility" />
+          <Stack.Screen name="settings/storage-usage" />
+          <Stack.Screen name="settings/connected-accounts" />
+          <Stack.Screen name="settings/backup-export" />
+          <Stack.Screen name="settings/diagnostics" />
+          <Stack.Screen name="settings/help-center" />
+          <Stack.Screen name="settings/contact-support" />
+          <Stack.Screen name="settings/feedback" />
+          <Stack.Screen name="settings/changelog" />
+          <Stack.Screen name="settings/terms-of-service" />
+          <Stack.Screen name="settings/privacy-policy" />
+          <Stack.Screen name="settings/community-guidelines" />
+          <Stack.Screen name="settings/open-source-licenses" />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style={statusBarStyle} />
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }
