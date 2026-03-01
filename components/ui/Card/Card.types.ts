@@ -3,7 +3,7 @@
  */
 
 import { ReactNode } from 'react';
-import { ImageSourcePropType, ViewStyle } from 'react-native';
+import { ImageSourcePropType, StyleProp, ViewStyle } from 'react-native';
 
 export type CardVariant = 'flat' | 'elevated' | 'outlined';
 
@@ -40,6 +40,11 @@ export interface CardHeaderProps {
    * Header content
    */
   children: ReactNode;
+
+  /**
+   * Additional style overrides
+   */
+  style?: StyleProp<ViewStyle>;
 }
 
 export interface CardImageProps {
@@ -66,6 +71,11 @@ export interface CardContentProps {
    * Content area content
    */
   children: ReactNode;
+
+  /**
+   * Additional style overrides
+   */
+  style?: StyleProp<ViewStyle>;
 }
 
 export interface CardFooterProps {
@@ -73,4 +83,9 @@ export interface CardFooterProps {
    * Footer content
    */
   children: ReactNode;
+
+  /**
+   * Additional style overrides
+   */
+  style?: StyleProp<ViewStyle>;
 }

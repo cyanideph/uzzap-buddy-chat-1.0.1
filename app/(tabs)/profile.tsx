@@ -101,7 +101,7 @@ export default function ProfileScreen() {
       >
         <Animated.View entering={FadeIn.duration(800)} style={styles.header}>
           <View style={styles.avatarContainer}>
-            <Avatar source={{ uri: profile?.avatar_url }} size="xl" />
+            <Avatar source={profile?.avatar_url ? { uri: profile.avatar_url } : undefined} size="xl" />
             <TouchableOpacity style={styles.editAvatarBtn} onPress={handleUpdateAvatar}>
               <Ionicons name="camera" size={20} color={colors.text} />
             </TouchableOpacity>
@@ -165,7 +165,7 @@ export default function ProfileScreen() {
                       <Ionicons name="calendar-outline" size={20} color={colors.textTertiary} />
                       <View style={styles.infoTextContainer}>
                         <Text style={styles.infoLabel}>Joined</Text>
-                        <Text style={styles.infoValue}>{new Date(profile?.created_at).toLocaleDateString()}</Text>
+                        <Text style={styles.infoValue}>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'}</Text>
                       </View>
                     </View>
                   </View>

@@ -55,6 +55,7 @@ export function Avatar({
   onPress,
   accessibilityLabel,
   testID,
+  style,
 }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
 
@@ -114,13 +115,14 @@ export function Avatar({
         activeOpacity={0.7}
         accessibilityLabel={accessibilityLabel || `Avatar for ${name}`}
         accessibilityRole="button"
+        style={style}
       >
         {avatarContent}
       </TouchableOpacity>
     );
   }
 
-  return avatarContent;
+  return <View style={style}>{avatarContent}</View>;
 }
 
 // Helper function to extract initials from name
