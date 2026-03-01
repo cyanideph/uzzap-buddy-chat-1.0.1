@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Container, Button } from '@/components/ui';
 import { borderRadius, colors, spacing, typography, withOpacity } from '@/constants/design';
-import { ONBOARDING_SLIDES } from './_onboardingData';
+import { ONBOARDING_SLIDES } from '@/constants/onboardingData';
 
 export default function WelcomeScreen() {
   const router = useRouter();
