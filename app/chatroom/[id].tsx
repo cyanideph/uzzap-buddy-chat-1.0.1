@@ -26,6 +26,7 @@ export default function ChatroomScreen() {
 
   const messages = useMemo(() => chatroomMessages[id as string] || [], [chatroomMessages, id]);
   const activeTyping = Array.from(typingUsers[id as string] || []).filter((userId) => userId !== profile?.id);
+  const roomRegion = (room?.description || '').split(':')[0] || 'General';
 
   useEffect(() => {
     if (!id || !profile) return;
@@ -179,6 +180,9 @@ export default function ChatroomScreen() {
         options={{
           headerShown: true,
           title: room?.name || 'Chatroom',
+          headerBackTitle: 'Back',
+          headerStyle: { backgroundColor: colors.backgroundSecondary },
+          headerTitleStyle: { ...typography.h4, color: colors.text },
           headerRight: () => (
             <TouchableOpacity onPress={() => Alert.alert('Room Info', room?.description)}>
               <Ionicons name="information-circle-outline" size={24} color={colors.text} />
@@ -199,6 +203,14 @@ export default function ChatroomScreen() {
           contentContainerStyle={styles.messageList}
           estimatedItemSize={100}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          ListHeaderComponent={<Text style={styles.roomMetaText}>#{roomRegion} • {messages.length} messages</Text>}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Ionicons name="chatbubble-ellipses-outline" size={44} color={colors.border} />
+              <Text style={styles.emptyStateTitle}>No messages yet</Text>
+              <Text style={styles.emptyStateSub}>Start the conversation and break the ice 👋</Text>
+            </View>
+          }
         />
 
         {activeTyping.length > 0 && (
@@ -234,6 +246,28 @@ const styles = StyleSheet.create({
   container: { backgroundColor: colors.background },
   centered: { justifyContent: 'center', alignItems: 'center' },
   messageList: { padding: spacing.md, paddingBottom: spacing.xl },
+  roomMetaText: {
+    ...typography.small,
+    color: colors.textTertiary,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xxxl,
+    gap: spacing.xs,
+  },
+  emptyStateTitle: {
+    ...typography.h4,
+    color: colors.text,
+    marginTop: spacing.sm,
+  },
+  emptyStateSub: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
   messageWrapper: { flexDirection: 'row', marginBottom: spacing.md, maxWidth: '80%' },
   myMessageWrapper: { alignSelf: 'flex-end', flexDirection: 'row-reverse' },
   theirMessageWrapper: { alignSelf: 'flex-start' },
