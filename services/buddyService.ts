@@ -3,9 +3,9 @@ import { BuddyRequest, Profile } from '../types/database.types';
 
 export const buddyService = {
   async getBuddies(userId: string): Promise<Profile[]> {
-    const { data, error } = await supabase
+    const { data: buddyRows, error } = await supabase
       .from('buddies')
-      .select('profiles(*)')
+      .select('buddy_id')
       .eq('user_id', userId)
       .eq('status', 'accepted');
 
@@ -14,7 +14,22 @@ export const buddyService = {
       return [];
     }
 
-    return data.map((item: any) => item.profiles);
+    const buddyIds = buddyRows.map((item: { buddy_id: string }) => item.buddy_id);
+    if (buddyIds.length === 0) {
+      return [];
+    }
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', buddyIds);
+
+    if (profilesError) {
+      console.error('Error fetching buddy profiles:', profilesError);
+      return [];
+    }
+
+    return profiles;
   },
 
   async sendBuddyRequest(senderId: string, receiverId: string): Promise<BuddyRequest | null> {
