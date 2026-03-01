@@ -164,6 +164,21 @@ export default function BuddiesScreen() {
   return (
     <Container style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Your buddy hub</Text>
+          <Text style={styles.summarySubtitle}>Manage connections, discover new people, and never miss a request.</Text>
+          <View style={styles.summaryStats}>
+            <View style={styles.summaryStatItem}>
+              <Text style={styles.summaryStatValue}>{buddies?.length || 0}</Text>
+              <Text style={styles.summaryStatLabel}>Buddies</Text>
+            </View>
+            <View style={styles.summaryStatItem}>
+              <Text style={styles.summaryStatValue}>{buddyRequests?.length || 0}</Text>
+              <Text style={styles.summaryStatLabel}>Requests</Text>
+            </View>
+          </View>
+        </View>
+
         <View style={styles.tabs}>
           <TouchableOpacity
             onPress={() => setActiveTab('My Buddies')}
@@ -248,9 +263,51 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  summaryCard: {
+    margin: spacing.md,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  summaryTitle: {
+    ...typography.h4,
+    color: colors.text,
+  },
+  summarySubtitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+  summaryStats: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  summaryStatItem: {
+    flex: 1,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+  },
+  summaryStatValue: {
+    ...typography.h4,
+    color: colors.accent,
+  },
+  summaryStatLabel: {
+    ...typography.small,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
   tabs: {
     flexDirection: 'row',
     padding: spacing.sm,
+    paddingTop: 0,
+    gap: spacing.xs,
   },
   tab: {
     flex: 1,
@@ -264,6 +321,7 @@ const styles = StyleSheet.create({
   tabText: {
     ...typography.smallBold,
     color: colors.textTertiary,
+    fontSize: 11,
   },
   activeTabText: {
     color: colors.text,

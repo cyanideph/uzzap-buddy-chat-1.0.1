@@ -27,15 +27,21 @@ export default function ChatroomListScreen() {
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomRegion, setNewRoomRegion] = useState('Metro Manila');
   const [newRoomDescription, setNewRoomDescription] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     fetchChatrooms();
   }, [fetchChatrooms]);
 
-  const filteredChatrooms = chatrooms.filter(room => 
-    selectedRegion === 'All' || getRoomRegion(room) === selectedRegion || room.name.includes(selectedRegion)
-  );
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredChatrooms = chatrooms.filter((room) => {
+    const regionMatch = selectedRegion === 'All' || getRoomRegion(room) === selectedRegion || room.name.includes(selectedRegion);
+    if (!normalizedSearch) return regionMatch;
+
+    return regionMatch
+      && (`${room.name} ${room.description || ''} ${getRoomRegion(room)}`.toLowerCase().includes(normalizedSearch));
+  });
 
   const handleCreateRoom = async () => {
     if (!newRoomName || !newRoomRegion || !profile) {
@@ -102,6 +108,29 @@ export default function ChatroomListScreen() {
   return (
     <Container style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.hero}>
+          <Text style={styles.heroTitle}>Discover communities</Text>
+          <Text style={styles.heroSubtitle}>Jump into active rooms by region, or create your own space in seconds.</Text>
+          <View style={styles.heroStats}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{chatrooms.length}</Text>
+              <Text style={styles.statLabel}>Total rooms</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{filteredChatrooms.length}</Text>
+              <Text style={styles.statLabel}>Matching</Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.searchWrap}>
+          <Input
+            placeholder="Search chatrooms, topics, or regions"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            leftIcon={<Ionicons name="search" size={18} color={colors.textTertiary} />}
+            clearable
+          />
+        </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -240,10 +269,55 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
     backgroundColor: colors.background,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  hero: {
+    marginHorizontal: spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.md,
+  },
+  heroTitle: {
+    ...typography.h3,
+    color: colors.text,
+  },
+  heroSubtitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+  heroStats: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  statCard: {
+    flex: 1,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  statValue: {
+    ...typography.h4,
+    color: colors.accent,
+  },
+  statLabel: {
+    ...typography.small,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  searchWrap: {
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
   },
   regionsContainer: {
     paddingHorizontal: spacing.md,
