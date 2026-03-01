@@ -108,15 +108,56 @@ export default function ChatroomListScreen() {
   const [selectedProvince, setSelectedProvince] = useState('All Provinces');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [createModalVisible, setCreateModalVisible] = useState(false);
   const [pickerModalVisible, setPickerModalVisible] = useState(false);
   const [pickerType, setPickerType] = useState<'region' | 'province'>('region');
 
-  const [newRoomRegion, setNewRoomRegion] = useState('Region IV-A (CALABARZON)');
-  const [newRoomProvince, setNewRoomProvince] = useState('Batangas');
-  const [newRoomName, setNewRoomName] = useState('');
-  const [newRoomDescription, setNewRoomDescription] = useState('');
   const [creating, setCreating] = useState(false);
+
+  const ensureProvinceChatroom = async (province: string, regionHint?: string) => {
+    if (!profile) {
+      Alert.alert('Login required', 'Please log in to join a provincial chatroom.');
+      return;
+    }
+
+    const region = regionHint || PROVINCE_TO_REGION[province.toLowerCase()] || 'Uncategorized';
+    const existingRoom = (chatrooms as ChatroomItem[]).find((room) => {
+      const location = parseRoomLocation(room);
+      return location.province.toLowerCase() === province.toLowerCase() && location.region === region;
+    });
+
+    if (existingRoom) {
+      router.push(`/chatroom/${existingRoom.id}` as any);
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const finalRoomName = `${province} Community`;
+      const { data, error } = await supabase
+        .from('chatrooms')
+        .insert({
+          name: finalRoomName,
+          slug: `${finalRoomName.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')}-${Date.now()}`,
+          description: `${region} > ${province} Community chatroom`,
+          type: 'public',
+          region,
+          province,
+          category: 'Lifestyle',
+          created_by: profile.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await fetchChatrooms();
+      router.push(`/chatroom/${data.id}` as any);
+    } catch {
+      Alert.alert('Error', 'Unable to join this province right now. Please try again.');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   useEffect(() => {
     fetchChatrooms();
@@ -126,8 +167,6 @@ export default function ChatroomListScreen() {
     () => ['All Provinces', ...(selectedRegion === 'All Regions' ? [] : PHILIPPINES_REGIONS[selectedRegion] || [])],
     [selectedRegion],
   );
-
-  const createRegionProvinces = PHILIPPINES_REGIONS[newRoomRegion] || [];
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const hasActiveFilters = selectedRegion !== 'All Regions' || selectedProvince !== 'All Provinces' || normalizedSearch.length > 0;
@@ -168,56 +207,14 @@ export default function ChatroomListScreen() {
 
     if (province === 'All Provinces') return;
 
-    const matchingRoom = (chatrooms as ChatroomItem[]).find((room) => {
-      const location = parseRoomLocation(room);
-      return location.province.toLowerCase() === province.toLowerCase();
-    });
-
-    if (matchingRoom) {
-      router.push(`/chatroom/${matchingRoom.id}` as any);
-      return;
-    }
-
-    Alert.alert('No room yet', `No chatroom found for ${province}. You can create one below.`);
-  };
-
-  const handleCreateRoom = async () => {
-    if (!profile || !newRoomRegion || !newRoomProvince) {
-      Alert.alert('Error', 'Please choose a region and province.');
-      return;
-    }
-
-    const finalRoomName = newRoomName.trim() || `${newRoomProvince} Community`;
-
-    setCreating(true);
-    try {
-      const { data, error } = await supabase
-        .from('chatrooms')
-        .insert({
-          name: finalRoomName,
-          slug: `${finalRoomName.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')}-${Date.now()}`,
-          description: newRoomDescription || `${newRoomRegion} > ${newRoomProvince} Community chatroom`,
-          type: 'public',
-          region: newRoomRegion,
-          province: newRoomProvince,
-          category: 'Lifestyle',
-          created_by: profile.id,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setCreateModalVisible(false);
-      setNewRoomDescription('');
-      setNewRoomName('');
-      fetchChatrooms();
-      router.push(`/chatroom/${data.id}`);
-    } catch {
-      Alert.alert('Error', 'Failed to create chatroom. Please try again.');
-    } finally {
-      setCreating(false);
-    }
+    const region = selectedRegion === 'All Regions' ? PROVINCE_TO_REGION[province.toLowerCase()] : selectedRegion;
+    Alert.alert('Join Chatroom', `Do you want to join ${province}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Join',
+        onPress: () => ensureProvinceChatroom(province, region),
+      },
+    ]);
   };
 
   const renderChatroom = ({ item, index }: { item: ChatroomItem; index: number }) => {
@@ -354,86 +351,16 @@ export default function ChatroomListScreen() {
             <View style={styles.emptyContainer}>
               <Ionicons name="map-outline" size={76} color={colors.border} />
               <Text style={styles.emptyTitle}>No rooms in this filter yet</Text>
-              <Text style={styles.emptySubtitle}>Try another province or create the first chatroom for your local area.</Text>
+              <Text style={styles.emptySubtitle}>Try another province to auto-create and join its chatroom.</Text>
               {hasActiveFilters ? (
                 <Button variant="ghost" onPress={clearAllFilters} style={styles.emptyGhostButton}>
                   Clear Filters
                 </Button>
               ) : null}
-              <Button variant="primary" onPress={() => setCreateModalVisible(true)} style={styles.createButton}>
-                Create Provincial Room
-              </Button>
             </View>
           ) : null
         }
       />
-
-      <TouchableOpacity style={styles.fab} onPress={() => setCreateModalVisible(true)}>
-        <Ionicons name="add" size={30} color={colors.text} />
-      </TouchableOpacity>
-
-      <Modal visible={createModalVisible} animationType="slide" transparent onRequestClose={() => setCreateModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create Provincial Chatroom</Text>
-              <TouchableOpacity onPress={() => setCreateModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.textTertiary} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <Text style={styles.label}>Region</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.regionsContainer}>
-                {Object.keys(PHILIPPINES_REGIONS).map((region) => (
-                  <TouchableOpacity
-                    key={region}
-                    onPress={() => {
-                      setNewRoomRegion(region);
-                      setNewRoomProvince(PHILIPPINES_REGIONS[region][0]);
-                    }}
-                    style={[styles.regionOption, newRoomRegion === region && styles.regionOptionActive]}
-                  >
-                    <Text style={[styles.regionOptionText, newRoomRegion === region && styles.regionOptionTextActive]}>{region}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              <Text style={styles.label}>Province / City</Text>
-              <View style={styles.provinceGrid}>
-                {createRegionProvinces.map((province) => (
-                  <TouchableOpacity
-                    key={province}
-                    onPress={() => setNewRoomProvince(province)}
-                    style={[styles.provinceOption, newRoomProvince === province && styles.provinceOptionActive]}
-                  >
-                    <Text style={[styles.provinceOptionText, newRoomProvince === province && styles.provinceOptionTextActive]}>{province}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Input
-                label="Room Name (optional)"
-                placeholder={`${newRoomProvince} Community`}
-                value={newRoomName}
-                onChangeText={setNewRoomName}
-              />
-
-              <Input
-                label="Description (optional)"
-                placeholder="Introduce your local room"
-                value={newRoomDescription}
-                onChangeText={setNewRoomDescription}
-                multiline
-              />
-
-              <Button variant="primary" onPress={handleCreateRoom} loading={creating} style={styles.modalCreateBtn}>
-                Create Room
-              </Button>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
 
       <Modal visible={pickerModalVisible} animationType="fade" transparent onRequestClose={() => setPickerModalVisible(false)}>
         <View style={styles.pickerOverlay}>
