@@ -13,7 +13,6 @@ const shortcuts = [
   { label: 'Saved Rooms', route: '/chatrooms/saved' },
   { label: 'Recent Visits', route: '/chatrooms/recent' },
   { label: 'Join Requests', route: '/chatrooms/join-requests' },
-  { label: 'Create Advanced', route: '/chatrooms/create' },
 ] as const;
 
 export default function ChatroomDiscoverScreen() {
