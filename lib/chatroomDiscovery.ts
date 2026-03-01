@@ -3,7 +3,7 @@ import { chatroomService } from '../services/chatroomService';
 import { Chatroom } from '../types/database.types';
 
 export type DiscoveryTab = 'trending' | 'new' | 'nearby';
-export type ChatroomCategory = 'NCR' | 'Luzon' | 'Visayas' | 'Mindanao';
+export type ChatroomCategory = 'Luzon' | 'Visayas' | 'Mindanao';
 
 export type ChatroomDiscoveryItem = {
   id: string;
@@ -31,22 +31,22 @@ export const discoveryTabs: { key: DiscoveryTab; label: string }[] = [
   { key: 'nearby', label: 'Nearby' },
 ];
 
-export const categories: ChatroomCategory[] = ['NCR', 'Luzon', 'Visayas', 'Mindanao'];
+export const categories: ChatroomCategory[] = ['Luzon', 'Visayas', 'Mindanao'];
 
 export const mockChatrooms: ChatroomDiscoveryItem[] = [
   {
-    id: 'metro-manila',
-    name: 'Metro Manila',
-    slug: 'metro-manila',
-    about: 'Local updates, events, and discussions in Metro Manila.',
+    id: 'laguna',
+    name: 'Laguna',
+    slug: 'laguna',
+    about: 'Province-wide discussions and local updates from Laguna.',
     rules: ['Respect different views', 'No spam posts'],
-    admins: ['NCRAdmin'],
-    memberCount: 2100,
+    admins: ['LuzonAdmin'],
+    memberCount: 1210,
     privacy: 'public',
     language: 'Filipino / English',
-    tags: ['city', 'events', 'commute'],
-    category: 'NCR',
-    region: 'National Capital Region',
+    tags: ['luzon', 'community', 'events'],
+    category: 'Luzon',
+    region: 'CALABARZON',
     createdAt: '2024-01-10T08:00:00.000Z',
     trendingScore: 97,
   },
