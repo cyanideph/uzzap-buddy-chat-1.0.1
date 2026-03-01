@@ -3,7 +3,7 @@ import { chatroomService } from '../services/chatroomService';
 import { Chatroom } from '../types/database.types';
 
 export type DiscoveryTab = 'trending' | 'new' | 'nearby';
-export type ChatroomCategory = 'Sports' | 'Gaming' | 'Study' | 'Music' | 'Tech' | 'Lifestyle' | 'Career';
+export type ChatroomCategory = 'NCR' | 'Luzon' | 'Visayas' | 'Mindanao';
 
 export type ChatroomDiscoveryItem = {
   id: string;
@@ -31,7 +31,122 @@ export const discoveryTabs: { key: DiscoveryTab; label: string }[] = [
   { key: 'nearby', label: 'Nearby' },
 ];
 
-export const categories: ChatroomCategory[] = ['Sports', 'Gaming', 'Study', 'Music', 'Tech', 'Lifestyle', 'Career'];
+export const categories: ChatroomCategory[] = ['NCR', 'Luzon', 'Visayas', 'Mindanao'];
+
+export const mockChatrooms: ChatroomDiscoveryItem[] = [
+  {
+    id: 'metro-manila',
+    name: 'Metro Manila',
+    slug: 'metro-manila',
+    about: 'Local updates, events, and discussions in Metro Manila.',
+    rules: ['Respect different views', 'No spam posts'],
+    admins: ['NCRAdmin'],
+    memberCount: 2100,
+    privacy: 'public',
+    language: 'Filipino / English',
+    tags: ['city', 'events', 'commute'],
+    category: 'NCR',
+    region: 'National Capital Region',
+    createdAt: '2024-01-10T08:00:00.000Z',
+    trendingScore: 97,
+  },
+  {
+    id: 'bulacan',
+    name: 'Bulacan',
+    slug: 'bulacan',
+    about: 'Community chat for residents of Bulacan province.',
+    rules: ['Be helpful', 'Keep posts relevant to the province'],
+    admins: ['LuzonMod'],
+    memberCount: 980,
+    privacy: 'public',
+    language: 'Filipino',
+    tags: ['luzon', 'community'],
+    category: 'Luzon',
+    region: 'Central Luzon',
+    createdAt: '2024-02-01T09:15:00.000Z',
+    trendingScore: 88,
+  },
+  {
+    id: 'cavite',
+    name: 'Cavite',
+    slug: 'cavite',
+    about: 'Provincial discussions, news, and local recommendations for Cavite.',
+    rules: ['No harassment', 'No misinformation'],
+    admins: ['CaviteCaptain'],
+    memberCount: 1040,
+    privacy: 'public',
+    language: 'Filipino / English',
+    tags: ['south-luzon', 'food', 'traffic'],
+    category: 'Luzon',
+    region: 'CALABARZON',
+    createdAt: '2024-01-28T11:25:00.000Z',
+    trendingScore: 91,
+  },
+  {
+    id: 'cebu',
+    name: 'Cebu',
+    slug: 'cebu',
+    about: 'Connect with people across Cebu province for travel, business, and daily life.',
+    rules: ['Use respectful language', 'No buy/sell scams'],
+    admins: ['VisayasLead'],
+    memberCount: 1300,
+    privacy: 'public',
+    language: 'Cebuano / English',
+    tags: ['visayas', 'tourism', 'business'],
+    category: 'Visayas',
+    region: 'Central Visayas',
+    createdAt: '2024-02-14T13:40:00.000Z',
+    trendingScore: 94,
+  },
+  {
+    id: 'iloilo',
+    name: 'Iloilo',
+    slug: 'iloilo',
+    about: 'A space for Iloilo province updates, advice, and meetups.',
+    rules: ['Stay on-topic', 'No offensive language'],
+    admins: ['IloiloHub'],
+    memberCount: 760,
+    privacy: 'public',
+    language: 'Hiligaynon / English',
+    tags: ['culture', 'local', 'events'],
+    category: 'Visayas',
+    region: 'Western Visayas',
+    createdAt: '2024-03-03T07:35:00.000Z',
+    trendingScore: 83,
+  },
+  {
+    id: 'davao-del-sur',
+    name: 'Davao del Sur',
+    slug: 'davao-del-sur',
+    about: 'Province-wide chat for Davao del Sur residents and visitors.',
+    rules: ['Be civil', 'No political hate speech'],
+    admins: ['MindanaoGuard'],
+    memberCount: 990,
+    privacy: 'public',
+    language: 'Bisaya / Filipino',
+    tags: ['mindanao', 'news', 'community'],
+    category: 'Mindanao',
+    region: 'Davao Region',
+    createdAt: '2024-02-22T10:10:00.000Z',
+    trendingScore: 89,
+  },
+  {
+    id: 'bukidnon',
+    name: 'Bukidnon',
+    slug: 'bukidnon',
+    about: 'A local room for Bukidnon province discussions and support.',
+    rules: ['Respect local culture', 'No duplicated posts'],
+    admins: ['BukidnonBase'],
+    memberCount: 640,
+    privacy: 'public',
+    language: 'Binukid / Cebuano / English',
+    tags: ['agriculture', 'local-life'],
+    category: 'Mindanao',
+    region: 'Northern Mindanao',
+    createdAt: '2024-04-05T06:20:00.000Z',
+    trendingScore: 80,
+  },
+];
 
 export const getDiscoverRooms = async (tab: DiscoveryTab): Promise<Chatroom[]> => {
   if (tab === 'new') {
@@ -85,8 +200,8 @@ export const markRoomVisited = async (roomId: string) => {
 
 export const getRoomsByIds = async (ids: string[]): Promise<Chatroom[]> => {
   if (ids.length === 0) return [];
-  
+
   // This is a simplified version - in production you'd use a single IN query
   const rooms = await chatroomService.getChatrooms();
-  return rooms.filter(room => ids.includes(room.id));
+  return rooms.filter((room) => ids.includes(room.id));
 };
