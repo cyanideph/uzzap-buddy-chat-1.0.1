@@ -234,6 +234,10 @@ export default function ChatroomListScreen() {
         </View>
 
         <View style={styles.searchWrap}>
+          <TouchableOpacity style={styles.discoveryBtn} onPress={() => router.push('/chatrooms/discover' as any)}>
+            <Ionicons name="compass-outline" size={18} color={colors.text} />
+            <Text style={styles.discoveryBtnText}>Open Discovery & Growth</Text>
+          </TouchableOpacity>
           <Input
             placeholder="Search by room, region, or province"
             value={searchQuery}
@@ -421,6 +425,19 @@ const styles = StyleSheet.create({
   statValue: { ...typography.h4, color: colors.accent },
   statLabel: { ...typography.small, color: colors.textSecondary, marginTop: 2 },
   searchWrap: { paddingHorizontal: spacing.md, marginBottom: spacing.sm },
+  discoveryBtn: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  discoveryBtnText: { ...typography.smallBold, color: colors.text },
   regionsContainer: { paddingHorizontal: spacing.md, gap: spacing.sm },
   regionTab: {
     paddingHorizontal: spacing.md,
