@@ -2,6 +2,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { colors } from '@/constants/design';
@@ -24,6 +25,7 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
   const { initialize, isLoading, user } = useAuthStore();
+  const { colors: themeColors, statusBarStyle } = useAppTheme();
 
   useEffect(() => {
     initialize();
@@ -56,7 +58,7 @@ export default function RootLayout() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: themeColors.background, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -64,7 +66,7 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: themeColors.background } }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(auth)/login" />
@@ -113,7 +115,7 @@ export default function RootLayout() {
         <Stack.Screen name="settings/open-source-licenses" />
         <Stack.Screen name="+not-found" />
       </Stack>
-      <StatusBar style="light" />
+      <StatusBar style={statusBarStyle} />
     </QueryClientProvider>
   );
 }
