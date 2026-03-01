@@ -100,10 +100,14 @@ export default function LoginScreen() {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don&apos;t have an account yet? </Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+            <TouchableOpacity onPress={() => router.push('/(auth)/register' as any)}>
               <Text style={styles.registerLink}>Create one</Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity style={styles.onboardingLinkWrap} onPress={() => router.push('/(auth)/welcome' as any)}>
+            <Text style={styles.onboardingLinkText}>Need a guided setup? Start onboarding</Text>
+          </TouchableOpacity>
         </Animated.View>
       </ScrollView>
     </Container>
@@ -207,5 +211,13 @@ const styles = StyleSheet.create({
   registerLink: {
     ...typography.bodyBold,
     color: colors.accent,
+  },
+  onboardingLinkWrap: {
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  onboardingLinkText: {
+    ...typography.captionBold,
+    color: colors.textTertiary,
   },
 });
