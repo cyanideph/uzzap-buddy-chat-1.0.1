@@ -177,7 +177,7 @@ export function Input({
             onChangeText={onChangeText}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            placeholder={label ? (isFocused || !value ? placeholder : undefined) : placeholder}
+            placeholder={label ? (isFocused ? placeholder : undefined) : placeholder}
             placeholderTextColor={colors.textTertiary}
             editable={!disabled}
             multiline={multiline}
