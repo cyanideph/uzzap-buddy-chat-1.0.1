@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/lib/supabase';
-import { colors, spacing, typography, borderRadius } from '@/constants/design';
+import { colors, spacing, typography, borderRadius, shadows, withOpacity } from '@/constants/design';
 import { Button, Input, Container } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -21,24 +22,26 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!email || !password || !displayName || !username || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      Alert.alert('Incomplete form', 'Please fill in all required fields.');
       return;
     }
 
-
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters long');
+      Alert.alert('Weak password', 'Password must be at least 8 characters long.');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert('Password mismatch', 'Passwords do not match.');
       return;
     }
 
     setLoading(true);
     try {
-      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+      const {
+        data: { user },
+        error: signUpError,
+      } = await supabase.auth.signUp({
         email,
         password,
       });
@@ -46,7 +49,6 @@ export default function RegisterScreen() {
       if (signUpError) throw signUpError;
       if (!user) throw new Error('Failed to create user');
 
-      // Create profile entry
       const { error: profileError } = await supabase.from('profiles').insert({
         id: user.id,
         username: username.toLowerCase(),
@@ -57,9 +59,7 @@ export default function RegisterScreen() {
 
       if (profileError) throw profileError;
 
-      Alert.alert('Success', 'Account created successfully!', [
-        { text: 'OK', onPress: () => router.replace('/(tabs)') }
-      ]);
+      Alert.alert('Success', 'Account created successfully!', [{ text: 'OK', onPress: () => router.replace('/(tabs)') }]);
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message || 'Check your details and try again.');
     } finally {
@@ -70,15 +70,24 @@ export default function RegisterScreen() {
   return (
     <Container style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Animated.View entering={FadeInUp.delay(200).duration(800)} style={styles.header}>
+        <Animated.View entering={FadeInUp.delay(150).duration(700)} style={styles.headerWrap}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
+            <Ionicons name="arrow-back" size={22} color={colors.text} />
+            <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Register</Text>
-          <Text style={styles.subtitle}>Create an account to join the community</Text>
+
+          <LinearGradient
+            colors={[withOpacity(colors.primary, 0.2), withOpacity(colors.secondary, 0.95)]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroCard}
+          >
+            <Text style={styles.title}>Create your account</Text>
+            <Text style={styles.subtitle}>Set up your profile and join the Uzzap community.</Text>
+          </LinearGradient>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(400).duration(800)} style={styles.form}>
+        <Animated.View entering={FadeInUp.delay(300).duration(700)} style={styles.formCard}>
           <Input
             label="Username"
             placeholder="Unique username"
@@ -87,7 +96,8 @@ export default function RegisterScreen() {
             autoCapitalize="none"
             leftIcon={<Ionicons name="at-outline" size={20} color={colors.textSecondary} />}
           />
-          <View style={{ height: spacing.md }} />
+          <View style={styles.fieldSpacer} />
+
           <Input
             label="Display Name"
             placeholder="What should we call you?"
@@ -95,27 +105,30 @@ export default function RegisterScreen() {
             onChangeText={setDisplayName}
             leftIcon={<Ionicons name="person-outline" size={20} color={colors.textSecondary} />}
           />
-          <View style={{ height: spacing.md }} />
+          <View style={styles.fieldSpacer} />
+
           <Input
             label="Email Address"
-            placeholder="Enter your email"
+            placeholder="name@example.com"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            clearable
             leftIcon={<Ionicons name="mail-outline" size={20} color={colors.textSecondary} />}
           />
-          <View style={{ height: spacing.md }} />
+          <View style={styles.fieldSpacer} />
+
           <Input
             label="Password"
-            placeholder="Enter your password"
+            placeholder="At least 8 characters"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
             leftIcon={<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />}
           />
-          
-          <View style={{ height: spacing.md }} />
+          <View style={styles.fieldSpacer} />
+
           <Input
             label="Confirm Password"
             placeholder="Re-enter your password"
@@ -131,37 +144,25 @@ export default function RegisterScreen() {
               <TouchableOpacity
                 key={r}
                 onPress={() => setRegion(r)}
-                style={[
-                  styles.regionOption,
-                  region === r && styles.regionOptionActive,
-                ]}
+                style={[styles.regionOption, region === r && styles.regionOptionActive]}
               >
-                <Text
-                  style={[
-                    styles.regionOptionText,
-                    region === r && styles.regionOptionTextActive,
-                  ]}
-                >
-                  {r}
-                </Text>
+                <Text style={[styles.regionOptionText, region === r && styles.regionOptionTextActive]}>{r}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <Button
-            variant="primary"
-            size="lg"
-            onPress={handleRegister}
-            loading={loading}
-            style={styles.registerButton}
-          >
-            Create Account
-          </Button>
+          <Text style={styles.helperText}>By creating an account, you agree to keep conversations respectful and authentic.</Text>
+
+          <View style={styles.registerButton}>
+            <Button variant="primary" size="lg" onPress={handleRegister} loading={loading}>
+              Create Account
+            </Button>
+          </View>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-              <Text style={styles.loginLink}>Login</Text>
+              <Text style={styles.loginLink}>Sign in</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -176,24 +177,39 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: spacing.xl,
-    paddingTop: 40,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
+    gap: spacing.lg,
   },
-  header: {
-    marginBottom: spacing.xxl,
+  headerWrap: {
+    gap: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.backgroundSecondary,
-    justifyContent: 'center',
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    gap: spacing.xs,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  backText: {
+    ...typography.captionBold,
+    color: colors.text,
+  },
+  heroCard: {
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: withOpacity(colors.primary, 0.2),
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   title: {
-    ...typography.h1,
+    ...typography.h2,
     color: colors.text,
   },
   subtitle: {
@@ -201,8 +217,17 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
-  form: {
+  formCard: {
     width: '100%',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.lg,
+    ...shadows.sm,
+  },
+  fieldSpacer: {
+    height: spacing.md,
   },
   label: {
     ...typography.smallBold,
@@ -214,7 +239,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   regionOption: {
     paddingHorizontal: spacing.md,
@@ -222,10 +247,10 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: colors.background,
   },
   regionOptionActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: withOpacity(colors.primary, 0.2),
     borderColor: colors.accent,
   },
   regionOptionText: {
@@ -236,15 +261,19 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: '700',
   },
+  helperText: {
+    ...typography.small,
+    color: colors.textTertiary,
+    marginBottom: spacing.md,
+  },
   registerButton: {
     width: '100%',
     borderRadius: borderRadius.lg,
-    marginTop: spacing.md,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
   },
   footerText: {
     ...typography.body,
