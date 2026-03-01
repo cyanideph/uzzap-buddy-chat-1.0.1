@@ -59,7 +59,7 @@ export default function RegisterScreen() {
 
       if (profileError) throw profileError;
 
-      Alert.alert('Success', 'Account created successfully!', [{ text: 'OK', onPress: () => router.replace('/(tabs)') }]);
+      Alert.alert('Success', 'Account created successfully! Please verify your email to continue.', [{ text: 'Continue', onPress: () => router.replace('/(auth)/email-verification' as any) }]);
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message || 'Check your details and try again.');
     } finally {
@@ -153,6 +153,10 @@ export default function RegisterScreen() {
 
           <Text style={styles.helperText}>By creating an account, you agree to keep conversations respectful and authentic.</Text>
 
+          <TouchableOpacity style={styles.guidedSetupLink} onPress={() => router.push('/(auth)/welcome' as any)}>
+            <Text style={styles.guidedSetupText}>Prefer step-by-step setup? Open onboarding wizard</Text>
+          </TouchableOpacity>
+
           <View style={styles.registerButton}>
             <Button variant="primary" size="lg" onPress={handleRegister} loading={loading}>
               Create Account
@@ -161,7 +165,7 @@ export default function RegisterScreen() {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+            <TouchableOpacity onPress={() => router.push('/(auth)/login' as any)}>
               <Text style={styles.loginLink}>Sign in</Text>
             </TouchableOpacity>
           </View>
@@ -265,6 +269,14 @@ const styles = StyleSheet.create({
     ...typography.small,
     color: colors.textTertiary,
     marginBottom: spacing.md,
+  },
+  guidedSetupLink: {
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  guidedSetupText: {
+    ...typography.captionBold,
+    color: colors.textTertiary,
   },
   registerButton: {
     width: '100%',

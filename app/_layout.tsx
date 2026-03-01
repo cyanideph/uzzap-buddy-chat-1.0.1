@@ -69,6 +69,14 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)/login" />
         <Stack.Screen name="(auth)/register" />
         <Stack.Screen name="(auth)/forgot-password" />
+        <Stack.Screen name="(auth)/welcome" />
+        <Stack.Screen name="(auth)/interests" />
+        <Stack.Screen name="(auth)/location" />
+        <Stack.Screen name="(auth)/username-check" />
+        <Stack.Screen name="(auth)/email-verification" />
+        <Stack.Screen name="(auth)/account-recovery-status" />
+        <Stack.Screen name="(auth)/complete-profile" />
+        <Stack.Screen name="(auth)/invite-friends" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="settings/notifications" />
         <Stack.Screen name="settings/privacy" />
