@@ -4,20 +4,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, borderRadius, withOpacity } from '@/constants/design';
 import { Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme } from '@/hooks/useAppTheme';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const compactLayout = width < 380;
+  const { colors: themeColors, isDark } = useAppTheme();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarActiveTintColor: isDark ? colors.accent : colors.primary,
+        tabBarInactiveTintColor: themeColors.textSecondary,
         tabBarStyle: {
-          backgroundColor: colors.backgroundSecondary,
-          borderTopColor: withOpacity(colors.primary, 0.2),
+          backgroundColor: themeColors.backgroundSecondary,
+          borderTopColor: withOpacity(colors.primary, isDark ? 0.2 : 0.12),
           borderTopWidth: 1,
           height: Platform.OS === 'ios' ? 64 + insets.bottom : 64,
           paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 12) : 12,
@@ -31,21 +33,21 @@ export default function TabLayout() {
           ...typography.smallBold,
           marginTop: compactLayout ? -1 : -2,
         },
-        tabBarActiveBackgroundColor: withOpacity(colors.primary, 0.16),
+        tabBarActiveBackgroundColor: withOpacity(colors.primary, isDark ? 0.16 : 0.1),
         tabBarHideOnKeyboard: true,
         sceneStyle: {
-          backgroundColor: colors.background,
+          backgroundColor: themeColors.background,
         },
         headerStyle: {
-          backgroundColor: colors.background,
-          borderBottomColor: colors.border,
+          backgroundColor: themeColors.background,
+          borderBottomColor: themeColors.border,
           borderBottomWidth: 1,
         },
         headerTitleStyle: {
           ...typography.h3,
-          color: colors.text,
+          color: themeColors.text,
         },
-        headerTintColor: colors.text,
+        headerTintColor: themeColors.text,
       }}
     >
       <Tabs.Screen
