@@ -41,7 +41,7 @@ export const messageService = {
 
   async markAsRead(messageId: string, userId: string): Promise<MessageRead | null> {
     const { data, error } = await supabase
-      .from('message_reads')
+      .from('message_read')
       .upsert([{ message_id: messageId, user_id: userId }])
       .select()
       .single();
