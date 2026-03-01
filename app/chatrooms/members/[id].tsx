@@ -1,37 +1,71 @@
-import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Container } from '@/components/ui';
 import { colors, borderRadius, spacing, typography } from '@/constants/design';
-import { mockChatrooms } from '@/lib/chatroomDiscovery';
+import { chatroomService } from '@/services/chatroomService';
+
+type MemberItem = {
+  id: string;
+  name: string;
+  role: string;
+};
 
 export default function ChatroomMembersScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const room = useMemo(() => mockChatrooms.find((item) => item.id === id), [id]);
+  const [members, setMembers] = useState<MemberItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const members = useMemo(() => {
-    const admins = room?.admins.map((admin) => ({ name: admin, role: 'Admin' })) || [];
-    const generated = Array.from({ length: 12 }).map((_, idx) => ({ name: `member_${idx + 1}`, role: 'Member' }));
-    return [...admins, ...generated];
-  }, [room]);
+  useEffect(() => {
+    if (!id) return;
+
+    const loadMembers = async () => {
+      setLoading(true);
+      const participants = await chatroomService.getChatroomParticipants(id);
+      const parsedMembers = participants.map((participant) => ({
+        id: participant.profile.id,
+        name: participant.profile.display_name || participant.profile.username,
+        role: participant.role === 'admin' ? 'Admin' : 'Member',
+      }));
+
+      setMembers(parsedMembers);
+      setLoading(false);
+    };
+
+    loadMembers();
+  }, [id]);
+
+  const sortedMembers = useMemo(
+    () => [...members].sort((a, b) => a.role.localeCompare(b.role) || a.name.localeCompare(b.name)),
+    [members]
+  );
 
   return (
     <Container>
       <Stack.Screen options={{ title: 'Members' }} />
-      <ScrollView contentContainerStyle={styles.content}>
-        {members.map((member) => (
-          <View key={member.name} style={styles.row}>
-            <Text style={styles.name}>{member.name}</Text>
-            <Text style={styles.role}>{member.role}</Text>
-          </View>
-        ))}
-      </ScrollView>
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.content}>
+          {sortedMembers.map((member) => (
+            <View key={member.id} style={styles.row}>
+              <Text style={styles.name}>{member.name}</Text>
+              <Text style={styles.role}>{member.role}</Text>
+            </View>
+          ))}
+
+          {sortedMembers.length === 0 && <Text style={styles.empty}>No members found.</Text>}
+        </ScrollView>
+      )}
     </Container>
   );
 }
 
 const styles = StyleSheet.create({
   content: { padding: spacing.md, gap: spacing.sm },
+  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   row: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -43,4 +77,5 @@ const styles = StyleSheet.create({
   },
   name: { ...typography.body, color: colors.text },
   role: { ...typography.smallBold, color: colors.accent },
+  empty: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md },
 });

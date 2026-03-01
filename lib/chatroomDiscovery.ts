@@ -3,24 +3,6 @@ import { chatroomService } from '../services/chatroomService';
 import { Chatroom } from '../types/database.types';
 
 export type DiscoveryTab = 'trending' | 'new' | 'nearby';
-export type ChatroomCategory = 'Sports' | 'Gaming' | 'Study' | 'Music' | 'Tech' | 'Lifestyle' | 'Career';
-
-export type ChatroomDiscoveryItem = {
-  id: string;
-  name: string;
-  slug: string;
-  about: string;
-  rules: string[];
-  admins: string[];
-  memberCount: number;
-  privacy: 'public' | 'private';
-  language: string;
-  tags: string[];
-  category: ChatroomCategory;
-  region: string;
-  createdAt: string;
-  trendingScore: number;
-};
 
 const SAVED_KEY = 'chatroom:saved:v1';
 const RECENT_KEY = 'chatroom:recent:v1';
@@ -31,7 +13,7 @@ export const discoveryTabs: { key: DiscoveryTab; label: string }[] = [
   { key: 'nearby', label: 'Nearby' },
 ];
 
-export const categories: ChatroomCategory[] = ['Sports', 'Gaming', 'Study', 'Music', 'Tech', 'Lifestyle', 'Career'];
+export const categories = ['Luzon', 'Visayas', 'Mindanao'];
 
 export const getDiscoverRooms = async (tab: DiscoveryTab): Promise<Chatroom[]> => {
   if (tab === 'new') {
@@ -85,8 +67,8 @@ export const markRoomVisited = async (roomId: string) => {
 
 export const getRoomsByIds = async (ids: string[]): Promise<Chatroom[]> => {
   if (ids.length === 0) return [];
-  
+
   // This is a simplified version - in production you'd use a single IN query
   const rooms = await chatroomService.getChatrooms();
-  return rooms.filter(room => ids.includes(room.id));
+  return rooms.filter((room) => ids.includes(room.id));
 };

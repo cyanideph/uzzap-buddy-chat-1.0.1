@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
-import { supabase } from '@/lib/supabase';
 import { colors, spacing, typography, borderRadius, shadows } from '@/constants/design';
 import { Container, Avatar } from '@/components/ui';
 import { Image } from 'expo-image';
@@ -13,7 +12,7 @@ import { messageService } from '@/services/messageService';
 import { chatroomService } from '@/services/chatroomService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { markRoomVisited, mockChatrooms } from '@/lib/chatroomDiscovery';
+import { markRoomVisited } from '@/lib/chatroomDiscovery';
 
 export default function ChatroomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,8 +30,7 @@ export default function ChatroomScreen() {
 
   const messages = useMemo(() => chatroomMessages[id as string] || [], [chatroomMessages, id]);
   const activeTyping = Array.from(typingUsers[id as string] || []).filter((userId) => userId !== profile?.id);
-  const roomRegion = (room?.description || '').split(':')[0] || 'General';
-  const roomDetail = useMemo(() => mockChatrooms.find((item) => item.id === id), [id]);
+  const roomRegion = room?.region || room?.category || 'General';
 
   useEffect(() => {
     if (!id || !profile) return;
@@ -43,8 +41,8 @@ export default function ChatroomScreen() {
 
       await chatroomService.joinChatroom(id as string, profile.id);
 
-      const { data } = await supabase.from('chatrooms').select('*').eq('id', id).single();
-      setRoom(data);
+      const roomData = await chatroomService.getChatroomById(id as string);
+      setRoom(roomData);
 
       await fetchMessages(id as string);
       const savedDraft = await AsyncStorage.getItem(draftKey);
@@ -229,13 +227,10 @@ export default function ChatroomScreen() {
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           ListHeaderComponent={
             <View style={styles.detailCard}>
-              <Text style={styles.detailTitle}>{roomDetail?.name || room?.name}</Text>
-              <Text style={styles.roomMetaText}>#{roomRegion} • {roomDetail?.memberCount || 0} members • {messages.length} messages</Text>
-              <Text style={styles.detailAbout}>{roomDetail?.about || room?.description || 'No room description yet.'}</Text>
-              {roomDetail?.rules?.map((rule) => (
-                <Text key={rule} style={styles.detailRule}>• {rule}</Text>
-              ))}
-              <Text style={styles.detailAdmins}>Admins: {roomDetail?.admins?.join(', ') || 'TBD'}</Text>
+              <Text style={styles.detailTitle}>{room?.name}</Text>
+              <Text style={styles.roomMetaText}>#{roomRegion} • {room?.member_count || 0} members • {messages.length} messages</Text>
+              <Text style={styles.detailAbout}>{room?.description || 'No room description yet.'}</Text>
+              <Text style={styles.detailAdmins}>Language: {room?.language || 'Not specified'}</Text>
               <View style={styles.detailActions}>
                 <TouchableOpacity style={styles.detailActionBtn} onPress={() => router.push(`/chatrooms/members/${id}` as any)}><Text style={styles.detailActionText}>Members</Text></TouchableOpacity>
                 <TouchableOpacity style={styles.detailActionBtn} onPress={() => router.push(`/chatrooms/edit/${id}` as any)}><Text style={styles.detailActionText}>Edit Settings</Text></TouchableOpacity>

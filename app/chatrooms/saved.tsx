@@ -35,7 +35,7 @@ export default function SavedChatroomsScreen() {
             {savedRooms.map((room) => (
               <DiscoveryRoomCard
                 key={room.id}
-                room={room as any}
+                room={room}
                 saved
                 onPress={() => router.push(`/chatroom/${room.id}` as any)}
                 onSave={async () => setSavedIds(await toggleSavedRoom(room.id))}
