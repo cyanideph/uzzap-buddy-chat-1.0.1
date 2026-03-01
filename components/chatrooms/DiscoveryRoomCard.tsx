@@ -2,16 +2,19 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, borderRadius, spacing, typography } from '@/constants/design';
-import { ChatroomDiscoveryItem } from '@/lib/chatroomDiscovery';
+import { Chatroom } from '@/types/database.types';
 
 type Props = {
-  room: ChatroomDiscoveryItem;
+  room: Chatroom;
   onPress: () => void;
   onSave?: () => void;
   saved?: boolean;
 };
 
 export function DiscoveryRoomCard({ room, onPress, onSave, saved }: Props) {
+  const tags = room.tags || [];
+  const about = room.description || 'No description yet.';
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.titleRow}>
@@ -22,12 +25,12 @@ export function DiscoveryRoomCard({ room, onPress, onSave, saved }: Props) {
           </TouchableOpacity>
         )}
       </View>
-      <Text style={styles.meta}>#{room.category} • {room.region} • {room.privacy}</Text>
-      <Text style={styles.about} numberOfLines={2}>{room.about}</Text>
+      <Text style={styles.meta}>#{room.category || 'General'} • {room.region || 'Unknown region'} • {room.type}</Text>
+      <Text style={styles.about} numberOfLines={2}>{about}</Text>
       <View style={styles.footer}>
-        <Text style={styles.members}>{room.memberCount.toLocaleString()} members</Text>
+        <Text style={styles.members}>{room.member_count.toLocaleString()} members</Text>
         <View style={styles.tagsRow}>
-          {room.tags.slice(0, 2).map((tag) => (
+          {tags.slice(0, 2).map((tag: string) => (
             <View key={tag} style={styles.tag}><Text style={styles.tagText}>#{tag}</Text></View>
           ))}
         </View>

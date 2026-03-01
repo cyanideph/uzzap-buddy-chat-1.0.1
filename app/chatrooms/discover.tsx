@@ -68,7 +68,7 @@ export default function ChatroomDiscoverScreen() {
           filteredRooms.map((room) => (
             <DiscoveryRoomCard
               key={room.id}
-              room={room as any}
+              room={room}
               saved={savedIds.includes(room.id)}
               onSave={async () => {
                 const next = await toggleSavedRoom(room.id);

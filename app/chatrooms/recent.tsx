@@ -31,7 +31,7 @@ export default function RecentChatroomsScreen() {
           <>
             {recentRooms.length === 0 && <Text style={styles.empty}>Rooms you open will appear here.</Text>}
             {recentRooms.map((room) => (
-              <DiscoveryRoomCard key={room.id} room={room as any} onPress={() => router.push(`/chatroom/${room.id}` as any)} />
+              <DiscoveryRoomCard key={room.id} room={room} onPress={() => router.push(`/chatroom/${room.id}` as any)} />
             ))}
           </>
         )}

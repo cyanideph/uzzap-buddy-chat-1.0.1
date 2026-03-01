@@ -108,6 +108,60 @@ export const chatroomService = {
     }
   },
 
+
+  async getChatroomById(chatroomId: string): Promise<Chatroom | null> {
+    const { data, error } = await supabase
+      .from('chatrooms')
+      .select('*')
+      .eq('id', chatroomId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching chatroom:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  async getChatroomParticipants(chatroomId: string): Promise<Array<{ profile: Profile; role: string }>> {
+    const { data, error } = await supabase
+      .from('chatroom_members')
+      .select('role, profiles(*)')
+      .eq('chatroom_id', chatroomId);
+
+    if (error) {
+      console.error('Error fetching chatroom participants:', error);
+      return [];
+    }
+
+    return data
+      .map((item: any) => ({
+        role: item.role ?? 'member',
+        profile: item.profiles,
+      }))
+      .filter((item: { profile: Profile | null }) => !!item.profile);
+  },
+
+  async updateChatroom(chatroomId: string, updates: { description?: string; tags?: string[] }): Promise<Chatroom | null> {
+    const { data, error } = await supabase
+      .from('chatrooms')
+      .update({
+        description: updates.description,
+        tags: updates.tags,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', chatroomId)
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error updating chatroom:', error);
+      return null;
+    }
+
+    return data;
+  },
   async getChatroomMembers(chatroomId: string): Promise<Profile[]> {
     const { data, error } = await supabase
       .from('chatroom_members')

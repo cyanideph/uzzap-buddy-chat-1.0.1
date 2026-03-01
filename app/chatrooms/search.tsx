@@ -26,7 +26,7 @@ export default function ChatroomSearchScreen() {
           <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xl }} />
         ) : (
           results.map((room) => (
-            <DiscoveryRoomCard key={room.id} room={room as any} onPress={() => router.push(`/chatroom/${room.id}` as any)} />
+            <DiscoveryRoomCard key={room.id} room={room} onPress={() => router.push(`/chatroom/${room.id}` as any)} />
           ))
         )}
       </ScrollView>
